@@ -201,7 +201,7 @@ export default function CourierCollections() {
     const ids = Array.from(selectedOrders);
     if (!confirm(`هل تريد تقفيل ${ids.length} أوردر؟`)) return;
 
-    const { error } = await supabase.from('orders').update({ is_courier_closed: true }).in('id', ids);
+    const { error } = await supabase.from('orders').update({ is_courier_closed: true, closed_at: new Date().toISOString() }).in('id', ids);
     if (error) { toast.error(error.message); return; }
 
     logActivity('تقفيل أوردرات من تحصيلات المندوب', { courier_id: selectedCourier, count: ids.length });
