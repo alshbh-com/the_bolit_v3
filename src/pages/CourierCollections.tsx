@@ -34,6 +34,9 @@ export default function CourierCollections() {
   const [orderNotes, setOrderNotes] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string[]>([]);
+  // Closure report (تقفيلة)
+  const [closureDate, setClosureDate] = useState(new Date().toISOString().split('T')[0]);
+  const [closedOrdersOnDate, setClosedOrdersOnDate] = useState<any[]>([]);
 
   useEffect(() => {
     const load = async () => {
