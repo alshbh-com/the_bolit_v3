@@ -13,7 +13,7 @@ import { Plus, Trash2, Lock, Search, FileBarChart } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
-import { getHiddenActiveCourierOrderIds, isCourierOrderClosable } from '@/lib/courierClosure';
+// Note: any order assigned to a courier can be closed regardless of its status
 import { ReportButton } from '@/components/ReportButton';
 
 export default function CourierCollections() {
