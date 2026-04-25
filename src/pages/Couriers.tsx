@@ -14,7 +14,7 @@ import { Eye, Lock, StickyNote, Pencil } from 'lucide-react';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { logActivity } from '@/lib/activityLogger';
-import { getHiddenActiveCourierOrderIds, isCourierOrderClosable, isCourierOrderVisible } from '@/lib/courierClosure';
+import { isCourierOrderVisible } from '@/lib/courierClosure';
 
 export default function Couriers() {
   const { user } = useAuth();
