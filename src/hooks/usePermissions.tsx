@@ -25,6 +25,7 @@ export const ALL_SECTIONS = [
   { key: 'users', label: 'المستخدمين', url: '/users' },
   { key: 'status-management', label: 'إدارة الحالات', url: '/status-management' },
   { key: 'courier-collections', label: 'تحصيلات المندوبين', url: '/courier-collections' },
+  { key: 'courier-followup', label: 'متابعة المندوبين', url: '/courier-followup' },
   { key: 'company-accounts', label: 'حسابات الشركات', url: '/company-accounts' },
   { key: 'office-accounts', label: 'حسابات المكاتب', url: '/office-accounts' },
   { key: 'office-daily-expenses', label: 'مصاريف المكتب اليومية', url: '/office-daily-expenses' },
