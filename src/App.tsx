@@ -17,6 +17,7 @@ import DeliveryPrices from "@/pages/DeliveryPrices";
 import Products from "@/pages/Products";
 import Couriers from "@/pages/Couriers";
 import CourierCollections from "@/pages/CourierCollections";
+import CourierFollowup from "@/pages/CourierFollowup";
 import OfficeAccounts from "@/pages/OfficeAccounts";
 import Advances from "@/pages/Advances";
 import PrintSticker from "@/pages/PrintSticker";
@@ -104,6 +105,7 @@ const App = () => (
               <Route path="/users" element={<UsersPage />} />
               <Route path="/customers" element={<CustomersPage />} />
               <Route path="/courier-collections" element={<CourierCollections />} />
+              <Route path="/courier-followup" element={<CourierFollowup />} />
               <Route path="/collections" element={<Navigate to="/courier-collections" replace />} />
               <Route path="/office-accounts" element={<OfficeAccounts />} />
               <Route path="/office-daily-expenses" element={<OfficeDailyExpenses />} />
