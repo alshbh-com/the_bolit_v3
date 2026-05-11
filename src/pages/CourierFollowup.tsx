@@ -151,14 +151,14 @@ export default function CourierFollowup() {
       toast.error('رقم العميل غير صالح');
       return;
     }
-    const msg = buildMessage(template, order, statusName(order.status_id), courierName, courierPhone);
+    const msg = buildMessage(template, order, statusName(order.status_id), courierName, courierPhone, officeName(order.office_id));
     const url = `https://wa.me/${phone}?text=${encodeURIComponent(msg)}`;
     window.open(url, '_blank');
   };
 
   const openPreview = (order: Order) => {
     setActiveOrder(order);
-    setPreviewText(buildMessage(template, order, statusName(order.status_id), courierName, courierPhone));
+    setPreviewText(buildMessage(template, order, statusName(order.status_id), courierName, courierPhone, officeName(order.office_id)));
     setPreviewOpen(true);
   };
 
