@@ -28,6 +28,7 @@ export default function OfficeAccounts() {
   const [payments, setPayments] = useState<any[]>([]);
   const [officeOrders, setOfficeOrders] = useState<any[]>([]);
   const [couriers, setCouriers] = useState<any[]>([]);
+  const [allUsers, setAllUsers] = useState<Record<string, string>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [courierCommissionRate, setCourierCommissionRate] = useState('');
   const [officeCommissionRate, setOfficeCommissionRate] = useState('');
@@ -47,13 +48,17 @@ export default function OfficeAccounts() {
   useEffect(() => {
     supabase.from('offices').select('id, name').order('name').then(({ data }) => setOffices(data || []));
     supabase.from('order_statuses').select('*').order('sort_order').then(({ data }) => setStatuses(data || []));
-    // Load couriers
+    // Load couriers + all users for audit display
     const loadCouriers = async () => {
       const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'courier');
       if (roles && roles.length > 0) {
         const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', roles.map(r => r.user_id));
         setCouriers(profiles || []);
       }
+      const { data: all } = await supabase.from('profiles').select('id, full_name');
+      const map: Record<string, string> = {};
+      (all || []).forEach((p: any) => { map[p.id] = p.full_name || '—'; });
+      setAllUsers(map);
     };
     loadCouriers();
   }, []);
@@ -68,7 +73,7 @@ export default function OfficeAccounts() {
   const loadOfficeOrders = async () => {
     const { data } = await supabase
       .from('orders')
-      .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name, customer_phone, courier_id, office_id, created_at')
+      .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name, customer_phone, courier_id, office_id, created_at, returned_to_sender, returned_to_sender_at, returned_to_sender_by, last_modified_by, closed_by, closed_at')
       .eq('office_id', selectedOffice)
       .eq('is_closed', false)
       .order('created_at', { ascending: false });
