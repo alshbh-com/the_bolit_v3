@@ -86,6 +86,14 @@ export default function OfficeAccounts() {
     toast.success(settled ? 'تم تحديد كخالص' : 'تم إلغاء التحديد');
   };
 
+  const toggleReturnedToSender = async (orderId: string, returned: boolean) => {
+    const { error } = await supabase.from('orders').update({ returned_to_sender: returned } as any).eq('id', orderId);
+    if (error) { toast.error('فشل التحديث'); return; }
+    setOfficeOrders(prev => prev.map(o => o.id === orderId ? { ...o, returned_to_sender: returned, returned_to_sender_at: returned ? new Date().toISOString() : null } : o));
+    logActivity(returned ? 'order_returned_to_sender' : 'order_unreturned_to_sender', { order_id: orderId });
+    toast.success(returned ? 'تم تحديد ارتجاع للراسل' : 'تم إلغاء ارتجاع للراسل');
+  };
+
   const getDateFilter = () => {
     const now = new Date();
     if (period === 'daily') return now.toISOString().split('T')[0];
