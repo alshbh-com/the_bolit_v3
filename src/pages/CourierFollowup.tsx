@@ -84,6 +84,8 @@ export default function CourierFollowup() {
       }
       const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
       setStatuses(sts || []);
+      const { data: offs } = await supabase.from('offices').select('id, name, owner_name');
+      setOffices((offs || []) as Office[]);
     };
     load();
   }, []);
