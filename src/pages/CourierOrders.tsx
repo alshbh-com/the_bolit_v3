@@ -127,16 +127,7 @@ export default function CourierOrders() {
       .order('created_at', { ascending: false });
 
     const allOrders = data || [];
-    const hiddenActiveIds = getHiddenActiveCourierOrderIds(allOrders);
-
-    if (hiddenActiveIds.length > 0) {
-      await supabase.from('orders').update({ is_courier_closed: false }).in('id', hiddenActiveIds);
-    }
-
-    const reopenedIds = new Set(hiddenActiveIds);
-    const visibleOrders = allOrders
-      .map((order) => reopenedIds.has(order.id) ? { ...order, is_courier_closed: false } : order)
-      .filter(isCourierOrderVisible);
+    const visibleOrders = allOrders.filter(isCourierOrderVisible);
 
     setOrders(visibleOrders);
   };
