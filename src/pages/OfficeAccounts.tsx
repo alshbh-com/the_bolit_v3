@@ -740,7 +740,7 @@ export default function OfficeAccounts() {
                     <TableCell className="font-bold text-amber-500">{courierRate * filteredOrders.length} ج.م</TableCell>
                     <TableCell className="font-bold text-blue-500">{officeRate * filteredOrders.length} ج.م</TableCell>
                     <TableCell className="font-bold text-primary">{filteredOrders.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0)} ج.م</TableCell>
-                    <TableCell colSpan={4} />
+                    <TableCell colSpan={6} />
                   </TableRow>
                 </TableFooter>
               </Table>
