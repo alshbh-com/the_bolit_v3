@@ -467,11 +467,18 @@ export default function OfficeAccounts() {
         {selectedOffice !== 'all' && (
           <>
             <Button size="sm" variant="outline" onClick={exportToExcel}>
-              <FileSpreadsheet className="h-4 w-4 ml-1" />Excel
+              <FileSpreadsheet className="h-4 w-4 ml-1" />
+              {selectedOrderIds.length > 0 ? `Excel (${selectedOrderIds.length} محدد)` : 'Excel'}
             </Button>
-            <Button size="sm" variant="outline" onClick={printSheet}>
-              <Printer className="h-4 w-4 ml-1" />طباعة
+            <Button size="sm" variant={selectedOrderIds.length > 0 ? 'default' : 'outline'} onClick={printSheet}>
+              <Printer className="h-4 w-4 ml-1" />
+              {selectedOrderIds.length > 0 ? `طباعة المحدد (${selectedOrderIds.length})` : 'طباعة الكل'}
             </Button>
+            {selectedOrderIds.length > 0 && (
+              <Button size="sm" variant="ghost" onClick={() => setSelectedOrderIds([])}>
+                إلغاء التحديد
+              </Button>
+            )}
           </>
         )}
       </div>
