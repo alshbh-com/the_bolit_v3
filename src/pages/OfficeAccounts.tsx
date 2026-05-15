@@ -659,13 +659,24 @@ export default function OfficeAccounts() {
       {selectedOffice !== 'all' && filteredOrders.length > 0 && (
         <Card className="bg-card border-border">
           <CardContent className="p-4">
-            <div className="flex items-center justify-between mb-3">
-              <h3 className="font-semibold">أوردرات المكتب ({filteredOrders.length})</h3>
+            <div className="flex items-center justify-between mb-3 flex-wrap gap-2">
+              <h3 className="font-semibold">
+                أوردرات المكتب ({filteredOrders.length})
+                {selectedOrderIds.length > 0 && (
+                  <span className="text-primary text-sm mr-2">- محدد: {selectedOrderIds.length}</span>
+                )}
+              </h3>
             </div>
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
                   <TableRow className="border-border">
+                     <TableHead className="text-right w-10">
+                       <Checkbox
+                         checked={filteredOrders.length > 0 && selectedOrderIds.length === filteredOrders.length}
+                         onCheckedChange={(v) => setSelectedOrderIds(v ? filteredOrders.map(o => o.id) : [])}
+                       />
+                     </TableHead>
                      <TableHead className="text-right">الباركود</TableHead>
                      <TableHead className="text-right">العميل</TableHead>
                      <TableHead className="text-right">الهاتف</TableHead>
@@ -690,8 +701,15 @@ export default function OfficeAccounts() {
                     const shipping = Number(o.delivery_price || 0);
                     const net = price - shipping;
                     const createdDate = o.created_at ? new Date(o.created_at).toLocaleDateString('ar-EG') : '-';
+                    const isSelected = selectedOrderIds.includes(o.id);
                     return (
-                      <TableRow key={o.id} className="border-border">
+                      <TableRow key={o.id} className={`border-border ${isSelected ? 'bg-primary/5' : ''}`}>
+                        <TableCell>
+                          <Checkbox
+                            checked={isSelected}
+                            onCheckedChange={(v) => setSelectedOrderIds(prev => v ? [...prev, o.id] : prev.filter(id => id !== o.id))}
+                          />
+                        </TableCell>
                         <TableCell className="font-mono text-xs">
                           <div className="space-y-1">
                             <div>{o.barcode || '-'}</div>
