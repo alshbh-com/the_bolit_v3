@@ -292,8 +292,13 @@ export default function OfficeAccounts() {
 
   const officeName = offices.find(o => o.id === selectedOffice)?.name || '';
 
+  const getReportRows = () => selectedOrderIds.length > 0
+    ? filteredOrders.filter(o => selectedOrderIds.includes(o.id))
+    : filteredOrders;
+
   const exportToExcel = () => {
-    if (filteredOrders.length === 0) { toast.error('لا توجد بيانات للتصدير'); return; }
+    const rows = getReportRows();
+    if (rows.length === 0) { toast.error('لا توجد بيانات للتصدير'); return; }
     const statusName = (sid: string) => statuses.find(s => s.id === sid)?.name || '-';
 
     const data = filteredOrders.map((o, i) => ({
