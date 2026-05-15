@@ -301,7 +301,7 @@ export default function OfficeAccounts() {
     if (rows.length === 0) { toast.error('لا توجد بيانات للتصدير'); return; }
     const statusName = (sid: string) => statuses.find(s => s.id === sid)?.name || '-';
 
-    const data = filteredOrders.map((o, i) => ({
+    const data = rows.map((o, i) => ({
       '#': i + 1,
       'الباركود': o.barcode || '-',
       'الكود': o.customer_code || '-',
@@ -324,11 +324,11 @@ export default function OfficeAccounts() {
       'العميل': 'الإجمالي',
       'الهاتف': '',
       'المكتب': '',
-      'السعر': filteredOrders.reduce((s, o) => s + Number(o.price || 0), 0),
-      'الشحن': filteredOrders.reduce((s, o) => s + Number(o.delivery_price || 0), 0),
-      'عمولة المندوب': courierRate * filteredOrders.length,
-      'عمولة المكتب': officeRate * filteredOrders.length,
-      'الصافي': filteredOrders.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0),
+      'السعر': rows.reduce((s, o) => s + Number(o.price || 0), 0),
+      'الشحن': rows.reduce((s, o) => s + Number(o.delivery_price || 0), 0),
+      'عمولة المندوب': courierRate * rows.length,
+      'عمولة المكتب': officeRate * rows.length,
+      'الصافي': rows.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0),
       'الحالة': '',
       'المندوب': '',
     });
