@@ -3,9 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lock, Loader2, MessageCircle } from 'lucide-react';
-import logo from '@/assets/logo.png';
-import loginBg from '@/assets/login-bg.jpg';
+import { Lock, Loader2 } from 'lucide-react';
+import logo from '@/assets/logo.jpg';
 
 export default function Login() {
   const [password, setPassword] = useState('');
@@ -27,13 +26,6 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4 relative overflow-hidden">
-      {/* Shipping-themed background */}
-      <div
-        className="absolute inset-0 bg-cover bg-center opacity-25"
-        style={{ backgroundImage: `url(${loginBg})` }}
-      />
-      <div className="absolute inset-0 bg-gradient-to-b from-background/70 via-background/85 to-background" />
-
       {/* Decorative neon orbs */}
       <div className="absolute top-[-15%] right-[-10%] w-[520px] h-[520px] rounded-full bg-secondary/25 blur-[130px] animate-orb" />
       <div className="absolute bottom-[-15%] left-[-10%] w-[460px] h-[460px] rounded-full bg-primary/25 blur-[120px] animate-orb" style={{ animationDelay: '2s' }} />
@@ -41,16 +33,14 @@ export default function Login() {
       <Card className="w-full max-w-sm glass-effect border-primary/30 shadow-glow relative z-10 scanline overflow-hidden">
         <div className="h-1 w-full gradient-neon" />
         <CardContent className="pt-8 pb-6 px-6">
-          {/* Logo with halo */}
+          {/* Logo */}
           <div className="text-center mb-8">
-            <div className="relative mx-auto w-28 h-28 mb-4">
+            <div className="relative mx-auto w-24 h-24 mb-4">
               <div className="absolute inset-0 rounded-2xl gradient-neon blur-2xl opacity-70 animate-neon-pulse" />
               <img
                 src={logo}
                 alt="The Pilito"
-                width={512}
-                height={512}
-                className="relative h-28 w-28 object-contain"
+                className="relative h-24 w-24 rounded-2xl object-cover shadow-glow"
               />
             </div>
             <h1 className="text-3xl font-display font-extrabold uppercase tracking-[0.15em] text-foreground neon-text">
@@ -90,23 +80,17 @@ export default function Login() {
             </Button>
           </form>
 
-          {/* WhatsApp + credit */}
-          <div className="mt-6 space-y-3">
-            <a
-              href="https://wa.me/201061067966"
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex w-full items-center justify-center gap-2 h-11 rounded-md bg-[hsl(var(--success))]/15 hover:bg-[hsl(var(--success))]/25 border border-[hsl(var(--success))]/50 text-[hsl(var(--success))] font-display uppercase tracking-[0.15em] text-xs transition-colors shadow-glow-lime"
-            >
-              <MessageCircle className="h-4 w-4" />
-              تواصل عبر واتساب
-            </a>
-            <p className="text-center text-[11px] text-muted-foreground leading-relaxed">
-              تم صنع السيستم من شركة{' '}
-              <span className="font-display tracking-widest text-secondary neon-text-magenta">دوبامين</span>{' '}
-              للبرمجة <span className="text-muted-foreground/70">(الشبح سابقاً)</span>
-            </p>
-          </div>
+          {/* Credit */}
+          <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed">
+            تم صنع السيستم من شركة{' '}
+            <span className="font-display tracking-widest text-secondary neon-text-magenta">دوبامين</span>{' '}
+            للبرمجة <span className="text-muted-foreground/70">(الشبح سابقاً)</span>
+            <span className="block mt-1 font-mono-neon tracking-widest text-primary" dir="ltr">
+              <a href="https://wa.me/201061067966" target="_blank" rel="noopener noreferrer" className="hover:underline">
+                01061067966
+              </a>
+            </span>
+          </p>
         </CardContent>
       </Card>
     </div>
