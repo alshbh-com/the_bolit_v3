@@ -3,9 +3,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent } from '@/components/ui/card';
-import { Lock, Loader2, MessageCircle } from 'lucide-react';
-import logo from '@/assets/logo.png';
-import loginBg from '@/assets/login-bg.jpg';
+import { Lock, Loader2 } from 'lucide-react';
+import logo from '@/assets/logo.jpg';
 
 export default function Login() {
   const [password, setPassword] = useState('');
