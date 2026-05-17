@@ -53,6 +53,10 @@ import OfficeReport from "@/pages/OfficeReport";
 import TrashBin from "@/pages/TrashBin";
 import SystemGuide from "@/pages/SystemGuide";
 import OfficeDailyExpenses from "@/pages/OfficeDailyExpenses";
+import CourierClosing from "@/pages/CourierClosing";
+import ClosingsArchive from "@/pages/ClosingsArchive";
+import Treasury from "@/pages/Treasury";
+import CourierStatement from "@/pages/CourierStatement";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -132,6 +136,10 @@ const App = () => (
               <Route path="/trash" element={<TrashBin />} />
               <Route path="/system-guide" element={<SystemGuide />} />
               <Route path="/chat" element={<InternalChat />} />
+              <Route path="/courier-closing" element={<CourierClosing />} />
+              <Route path="/closings-archive" element={<ClosingsArchive />} />
+              <Route path="/treasury" element={<Treasury />} />
+              <Route path="/courier-statement" element={<CourierStatement />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
