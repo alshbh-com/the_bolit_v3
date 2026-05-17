@@ -53,8 +53,25 @@ export default function BarcodeScan() {
   const [input, setInput] = useState('');
   const [bulkOpen, setBulkOpen] = useState(false);
   const [busy, setBusy] = useState(false);
+  const [statusMap, setStatusMap] = useState<Record<string, string>>({});
+  const [courierMap, setCourierMap] = useState<Record<string, string>>({});
   const inputRef = useRef<HTMLInputElement>(null);
   const idsRef = useRef<Set<string>>(new Set());
+
+  useEffect(() => {
+    (async () => {
+      const [{ data: st }, { data: cu }] = await Promise.all([
+        supabase.from('order_statuses').select('id, name'),
+        supabase.from('profiles').select('id, full_name'),
+      ]);
+      const sm: Record<string, string> = {};
+      (st || []).forEach((s: any) => { sm[s.id] = s.name; });
+      setStatusMap(sm);
+      const cm: Record<string, string> = {};
+      (cu || []).forEach((c: any) => { cm[c.id] = c.full_name; });
+      setCourierMap(cm);
+    })();
+  }, []);
 
   const startSession = async () => {
     setBusy(true);
