@@ -109,7 +109,9 @@ export default function PrintSticker() {
         .sticker:last-child { page-break-after: auto; }
         .header { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 1px; direction: ltr; }
         .date { text-align: center; font-size: 8px; margin-bottom: 3px; color: #333; }
-        .barcode-num { font-family: monospace; font-size: 17px; font-weight: bold; margin-bottom: 4px; text-align: center; }
+        .bar-img { display: block; width: 90%; height: 14mm; margin: 1mm auto 1mm; }
+        .barcode-num { font-family: monospace; font-size: 14px; font-weight: bold; margin-bottom: 2px; text-align: center; letter-spacing: 1px; }
+        .tracking { font-size: 9px; text-align: center; margin-bottom: 3px; color: #111; }
         .info { margin: 2px 0; font-size: 10px; line-height: 1.4; text-align: right; word-wrap: break-word; overflow-wrap: break-word; }
         .row { display: flex; justify-content: space-between; margin: 2px 0; font-size: 10px; }
         .total { font-size: 15px; font-weight: bold; text-align: center; border: 1.5px solid #000; padding: 3px; margin-top: auto; }
