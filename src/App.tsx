@@ -37,6 +37,7 @@ import ProfitReport from "@/pages/ProfitReport";
 import TripsReport from "@/pages/TripsReport";
 import CourierReceipt from "@/pages/CourierReceipt";
 import CourierMonthlyReport from "@/pages/CourierMonthlyReport";
+import BarcodeScan from "@/pages/BarcodeScan";
 
 import StatusManagement from "@/pages/StatusManagement";
 import OrderNotes from "@/pages/OrderNotes";
