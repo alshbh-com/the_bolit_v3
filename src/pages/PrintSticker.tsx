@@ -7,6 +7,24 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, StickyNote, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import JsBarcode from 'jsbarcode';
+
+function barcodeDataUrl(value: string): string {
+  if (!value) return '';
+  try {
+    const canvas = document.createElement('canvas');
+    JsBarcode(canvas, value, {
+      format: 'CODE128',
+      width: 2,
+      height: 60,
+      displayValue: false,
+      margin: 0,
+    });
+    return canvas.toDataURL('image/png');
+  } catch {
+    return '';
+  }
+}
 
 export default function PrintSticker() {
   const [search, setSearch] = useState('');
@@ -64,11 +82,15 @@ export default function PrintSticker() {
     const stickers = selectedOrders.map(order => {
       const total = Number(order.price) + Number(order.delivery_price);
       const barcode = order.barcode || '';
+      const tracking = order.tracking_id || '';
+      const barImg = barcodeDataUrl(barcode);
       return `
         <div class="sticker">
           <div class="header">The Pilito</div>
           <div class="date">${new Date(order.created_at).toLocaleDateString('ar-EG')}</div>
+          ${barImg ? `<img class="bar-img" src="${barImg}" alt="barcode"/>` : ''}
           <div class="barcode-num">${barcode}</div>
+          ${tracking ? `<div class="tracking">رقم التتبع: <b>${tracking}</b></div>` : ''}
           <div class="row"><span>الكود: <b>${order.customer_code || '-'}</b></span></div>
           <div class="info">العميل: <b>${order.customer_name}</b></div>
           <div class="info">المكتب: <b>${order.offices?.name || '-'}</b></div>
@@ -87,7 +109,9 @@ export default function PrintSticker() {
         .sticker:last-child { page-break-after: auto; }
         .header { text-align: center; font-size: 16px; font-weight: bold; margin-bottom: 1px; direction: ltr; }
         .date { text-align: center; font-size: 8px; margin-bottom: 3px; color: #333; }
-        .barcode-num { font-family: monospace; font-size: 17px; font-weight: bold; margin-bottom: 4px; text-align: center; }
+        .bar-img { display: block; width: 90%; height: 14mm; margin: 1mm auto 1mm; }
+        .barcode-num { font-family: monospace; font-size: 14px; font-weight: bold; margin-bottom: 2px; text-align: center; letter-spacing: 1px; }
+        .tracking { font-size: 9px; text-align: center; margin-bottom: 3px; color: #111; }
         .info { margin: 2px 0; font-size: 10px; line-height: 1.4; text-align: right; word-wrap: break-word; overflow-wrap: break-word; }
         .row { display: flex; justify-content: space-between; margin: 2px 0; font-size: 10px; }
         .total { font-size: 15px; font-weight: bold; text-align: center; border: 1.5px solid #000; padding: 3px; margin-top: auto; }
@@ -105,13 +129,17 @@ export default function PrintSticker() {
     const invoicesHtml = selectedOrders.map((order, i) => {
       const total = Number(order.price) + Number(order.delivery_price);
       const barcode = order.barcode || '';
+      const tracking = order.tracking_id || '';
+      const barImg = barcodeDataUrl(barcode);
       return `
         <div class="invoice-page">
           <div class="header">The Pilito</div>
           <div class="date">${new Date().toLocaleDateString('ar-EG')} - فاتورة ${i + 1} من ${selectedOrders.length}</div>
+          ${barImg ? `<div class="bar-wrap"><img src="${barImg}" alt="barcode" style="height:60px"/><div style="font-family:monospace;font-size:16px;letter-spacing:2px;margin-top:4px">${barcode}</div></div>` : ''}
           <table>
-            <tr><th>الكود</th><td>${order.customer_code || '-'}</td></tr>
+            <tr><th>رقم التتبع</th><td style="font-family:monospace;direction:ltr;font-weight:bold">${tracking}</td></tr>
             <tr><th>الباركود</th><td style="font-family:monospace;direction:ltr">${barcode}</td></tr>
+            <tr><th>الكود</th><td>${order.customer_code || '-'}</td></tr>
             <tr><th>اسم العميل</th><td>${order.customer_name}</td></tr>
             <tr><th>الهاتف</th><td dir="ltr">${order.customer_phone}</td></tr>
             <tr><th>المكتب</th><td>${order.offices?.name || '-'}</td></tr>
@@ -132,7 +160,8 @@ export default function PrintSticker() {
         .invoice-page { page-break-after: always; padding: 10mm 0; }
         .invoice-page:last-child { page-break-after: auto; }
         .header { text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .date { text-align: center; margin-bottom: 20px; color: #666; font-size: 13px; }
+        .date { text-align: center; margin-bottom: 12px; color: #666; font-size: 13px; }
+        .bar-wrap { text-align: center; margin-bottom: 16px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #333; padding: 10px 14px; text-align: right; font-size: 14px; }
         th { background: #f0f0f0; font-weight: bold; width: 30%; }
