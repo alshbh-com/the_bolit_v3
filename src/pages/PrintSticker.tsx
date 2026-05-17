@@ -7,6 +7,24 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Search, StickyNote, FileText } from 'lucide-react';
 import { toast } from 'sonner';
+import JsBarcode from 'jsbarcode';
+
+function barcodeDataUrl(value: string): string {
+  if (!value) return '';
+  try {
+    const canvas = document.createElement('canvas');
+    JsBarcode(canvas, value, {
+      format: 'CODE128',
+      width: 2,
+      height: 60,
+      displayValue: false,
+      margin: 0,
+    });
+    return canvas.toDataURL('image/png');
+  } catch {
+    return '';
+  }
+}
 
 export default function PrintSticker() {
   const [search, setSearch] = useState('');
