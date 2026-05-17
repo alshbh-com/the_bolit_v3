@@ -23,6 +23,7 @@ const mainItems = [
   { title: 'الأوردرات القديمة', url: '/closed-orders', icon: Archive },
   { title: 'استيراد Excel', url: '/excel-import', icon: ClipboardList },
   { title: 'بحث شامل', url: '/search', icon: Search },
+  { title: 'قراءة الباركود', url: '/barcode-scan', icon: ScanLine },
 ];
 
 const managementItems = [
