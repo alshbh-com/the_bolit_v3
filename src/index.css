@@ -42,12 +42,12 @@
 
     --sidebar-background: 240 45% 4%;
     --sidebar-foreground: 0 0% 92%;
-    --sidebar-primary: 320 100% 55%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 280 60% 14%;
-    --sidebar-accent-foreground: 180 100% 70%;
-    --sidebar-border: 280 60% 18%;
-    --sidebar-ring: 320 100% 55%;
+    --sidebar-primary: 180 100% 55%;
+    --sidebar-primary-foreground: 240 40% 6%;
+    --sidebar-accent: 200 60% 14%;
+    --sidebar-accent-foreground: 180 100% 75%;
+    --sidebar-border: 200 60% 18%;
+    --sidebar-ring: 180 100% 55%;
 
     --success: 150 100% 50%;
     --success-foreground: 240 40% 6%;
