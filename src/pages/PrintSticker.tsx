@@ -129,13 +129,17 @@ export default function PrintSticker() {
     const invoicesHtml = selectedOrders.map((order, i) => {
       const total = Number(order.price) + Number(order.delivery_price);
       const barcode = order.barcode || '';
+      const tracking = order.tracking_id || '';
+      const barImg = barcodeDataUrl(barcode);
       return `
         <div class="invoice-page">
           <div class="header">The Pilito</div>
           <div class="date">${new Date().toLocaleDateString('ar-EG')} - فاتورة ${i + 1} من ${selectedOrders.length}</div>
+          ${barImg ? `<div class="bar-wrap"><img src="${barImg}" alt="barcode" style="height:60px"/><div style="font-family:monospace;font-size:16px;letter-spacing:2px;margin-top:4px">${barcode}</div></div>` : ''}
           <table>
-            <tr><th>الكود</th><td>${order.customer_code || '-'}</td></tr>
+            <tr><th>رقم التتبع</th><td style="font-family:monospace;direction:ltr;font-weight:bold">${tracking}</td></tr>
             <tr><th>الباركود</th><td style="font-family:monospace;direction:ltr">${barcode}</td></tr>
+            <tr><th>الكود</th><td>${order.customer_code || '-'}</td></tr>
             <tr><th>اسم العميل</th><td>${order.customer_name}</td></tr>
             <tr><th>الهاتف</th><td dir="ltr">${order.customer_phone}</td></tr>
             <tr><th>المكتب</th><td>${order.offices?.name || '-'}</td></tr>
