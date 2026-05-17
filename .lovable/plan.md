@@ -1,40 +1,88 @@
+## نظام التقفيل اليومي والمحاسبة المتكامل
 
+سأبني نظام متكامل للتقفيل اليومي للمندوبين مع الخزنة والتقارير، مربوط بنظام الشحن الحالي.
 
-## المشكلة
+### ملاحظات على الوضع الحالي
 
-عند تقفيل أوردرات المندوب (من صفحة المناديب أو تحصيلات المناديب)، يتم تعيين `is_closed = true` على الأوردر. هذا يجعل الأوردر يختفي من **حسابات المكاتب** لأن الصفحة تفلتر فقط الأوردرات اللي `is_closed = false`.
+النظام بالفعل يحتوي على:
+- باركود تلقائي عبر `generate_order_barcode()` (trigger موجود) — متسلسل رقمي عبر `order_barcode_seq`، و `tracking_id` = `TP-<barcode>`. سأكتفي بإضافة عمود `qr_value` فقط (نفس قيمة tracking_id) بدون تغيير منطق الترقيم القائم لأن الـ memory تنص على "Strictly numeric sequential barcodes" — **لن أغيّر صيغة الترقيم الحالية**، سأعرض الباركود/QR في الفواتير فقط.
+- صفحات قائمة: `CourierCollections`, `CourierFollowup`, `ClosedOrders`, `OfficeAccounts` — تتعامل مع تقفيل جزئي للمندوب. سأبني فوقها نظام تقفيل رسمي مُؤرشف.
 
-النتيجة: الأوردرات المقفلة بتروح للأوردرات القديمة بدل ما تظهر في حسابات المكاتب، فالمستخدم مش بيقدر يحسب مع المكتب.
+### الجداول الجديدة (Migration)
 
-## الحل
+```text
+courier_closings
+  id, courier_id, closing_date, closed_by, closed_at, status (open|closed|reopened)
+  total_orders, delivered_count, returned_count, postponed_count, failed_count
+  total_collected, courier_commission, shipping_fees, deposited_amount
+  shortage, surplus, net_due, notes
 
-فصل مفهوم "تقفيل المندوب" عن "تقفيل المكتب" بإضافة عمود جديد `is_courier_closed` للأوردرات.
+courier_closing_items
+  id, closing_id, order_id, final_status, collected_amount, commission, shipping, is_returned, scanned_at
 
-### التغييرات المطلوبة
+treasury_transactions
+  id, type (deposit|withdraw|adjustment), source (closing|manual|office),
+  reference_id, amount, balance_after, notes, created_by, created_at
 
-**1. Migration: إضافة عمود `is_courier_closed`**
-- إضافة عمود `is_courier_closed boolean default false` لجدول `orders`
-- تحديث الأوردرات الحالية المقفلة اللي ليها `courier_id` بحيث `is_courier_closed = true`
+financial_logs
+  id, entity_type, entity_id, action, before_json, after_json, user_id, created_at
 
-**2. تعديل عمليات تقفيل المندوب**
-- في `Couriers.tsx` و `CourierCollections.tsx`: تغيير التقفيل ليعمل `is_courier_closed = true` بدلاً من `is_closed = true`
-- الأوردر يختفي من المندوب لكن يفضل ظاهر في حسابات المكاتب
+courier_wallets
+  id, courier_id, balance, total_collected, total_commission, total_shortage, updated_at
 
-**3. تعديل صفحة حسابات المكاتب (`OfficeAccounts.tsx`)**
-- تغيير الفلتر من `is_closed = false` إلى عرض الأوردرات اللي `is_closed = false` (بغض النظر عن `is_courier_closed`)
-- كده الأوردرات المقفلة من المندوب هتظهر في حسابات المكاتب
+account_statements (view أو cached table)
+  generated on-demand per courier/customer/company
+```
 
-**4. تعديل صفحة أوردرات المندوب**
-- إخفاء الأوردرات اللي `is_courier_closed = true` من عند المندوب
+كل الجداول مع RLS (authenticated) + indices مناسبة + triggers للـ audit.
 
-**5. تعديل صفحة الأوردرات القديمة**
-- الأوردرات القديمة تبقى فقط اللي `is_closed = true` (التقفيل النهائي بعد حساب المكتب)
+### الصفحات الجديدة
 
-### الملفات المتأثرة
-- Migration SQL جديد
-- `src/pages/Couriers.tsx` — تقفيل المندوب يستخدم `is_courier_closed`
-- `src/pages/CourierCollections.tsx` — نفس التعديل
-- `src/pages/OfficeAccounts.tsx` — الفلتر يبقى كما هو (is_closed = false) فالأوردرات المقفلة من المندوب هتظهر
-- `src/pages/Orders.tsx` — التقفيل الرئيسي يبقى `is_closed = true` (تقفيل نهائي)
-- `src/pages/CourierOrders.tsx` — إخفاء الأوردرات اللي `is_courier_closed = true`
+1. **`/courier-closing`** — صفحة التقفيل الرئيسية:
+   - اختيار المندوب + اليوم
+   - عرض كل أوردرات المندوب غير المقفلة
+   - مدخل باركود (BarcodeScanner موجود) — يحدد الأوردر ويغير حالته (مسلم/مرتجع/مؤجل)
+   - حساب لحظي: إجمالي تحصيل، عمولات، شحن، عجز/زيادة، صافي
+   - مدخل "المبلغ المُسلَّم للخزنة" → يحسب العجز/الزيادة تلقائيًا
+   - زر "إغلاق وتقفيل" → ينشئ `courier_closing` + items، يقفل الأوردرات، يدخل المبلغ للخزنة، يحدّث المحفظة، يسجل log
 
+2. **`/closings-archive`** — أرشيف التقفيلات (يومي/شهري) مع فلترة بالمندوب والتاريخ، زر "فتح التقفيل" (صلاحية owner فقط).
+
+3. **`/treasury`** — الخزنة: الرصيد الحالي، حركة الأموال، فلترة بالنوع/التاريخ، تصدير.
+
+4. **`/courier-statement/:courierId`** — كشف حساب المندوب: رصيد سابق، تحصيل، عمولات، مرتجعات، صافي.
+
+5. **`/closings-report`** — تقرير التقفيلات (مع تقارير الأرباح/التحصيل/المرتجعات في صفحات منفصلة موجودة بالفعل).
+
+### Realtime
+
+استخدام `supabase.channel()` على `courier_closings` و `treasury_transactions` — يحدّث الواجهات (الإدارة، الحسابات، الخزنة) لحظيًا.
+
+### الصلاحيات
+
+استخدام `user_permissions` الموجود + إضافة sections جديدة:
+- `closing_create` (تقفيل)
+- `closing_reopen` (فتح تقفيل)
+- `closed_order_edit` (تعديل أوردر مقفل)
+- `closing_delete` (حذف تقفيلة)
+- `closing_approve` (اعتماد)
+
+الـ Owner يحصل على كل الصلاحيات تلقائيًا.
+
+### الحماية
+
+- DB constraint: `UNIQUE(courier_id, closing_date)` لمنع تقفيل مكرر لنفس اليوم.
+- Trigger يمنع UPDATE على orders إذا الأوردر داخل closing مُغلق (إلا لـ owner عبر setting).
+- كل عملية تكتب في `financial_logs` مع before/after.
+
+### تكامل الباركود
+
+عمود `qr_value` يُضاف للـ orders ويُملأ تلقائيًا بنفس `tracking_id` (عبر trigger). صفحة التقفيل تستخدم `BarcodeScanner` لقراءة `tracking_id`/`barcode` → جلب الأوردر فورًا.
+
+### الواجهة
+
+نفس الـ neon cyberpunk theme الحالي — `glass-effect`, `neon-text`, `gradient-neon`, Cairo/Orbitron.
+
+### الحجم
+
+هذا تغيير ضخم: **migration واحدة + ~6 صفحات جديدة + روابط في AppSidebar + إضافات صلاحيات + realtime hooks**. سأنفذها على دفعات متتالية بعد الموافقة.
