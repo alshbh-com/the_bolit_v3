@@ -154,8 +154,8 @@ export default function BarcodeScan() {
     }
 
     idsRef.current.add(data.id);
-    const courierName = (data as any).profiles?.full_name ?? null;
-    const statusName = (data as any).order_statuses?.name ?? null;
+    const courierName = data.courier_id ? (courierMap[data.courier_id] ?? null) : null;
+    const statusName = data.status_id ? (statusMap[data.status_id] ?? null) : null;
     const item: ScannedOrder = {
       id: data.id,
       barcode: data.barcode,
