@@ -175,7 +175,7 @@ export default function BarcodeScan() {
     setOrders(prev => [item, ...prev]);
     beep(true);
     toast.success(`تم اسكان: ${data.barcode ?? code}`);
-  }, [sessionId]);
+  }, [sessionId, statusMap, courierMap]);
 
   const onKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
