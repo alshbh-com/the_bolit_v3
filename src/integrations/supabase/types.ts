@@ -213,6 +213,131 @@ export type Database = {
         }
         Relationships: []
       }
+      courier_closing_items: {
+        Row: {
+          closing_id: string
+          collected_amount: number
+          commission: number
+          created_at: string
+          final_status: string
+          id: string
+          is_returned: boolean
+          order_id: string
+          scanned_at: string | null
+          shipping: number
+        }
+        Insert: {
+          closing_id: string
+          collected_amount?: number
+          commission?: number
+          created_at?: string
+          final_status?: string
+          id?: string
+          is_returned?: boolean
+          order_id: string
+          scanned_at?: string | null
+          shipping?: number
+        }
+        Update: {
+          closing_id?: string
+          collected_amount?: number
+          commission?: number
+          created_at?: string
+          final_status?: string
+          id?: string
+          is_returned?: boolean
+          order_id?: string
+          scanned_at?: string | null
+          shipping?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "courier_closing_items_closing_id_fkey"
+            columns: ["closing_id"]
+            isOneToOne: false
+            referencedRelation: "courier_closings"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      courier_closings: {
+        Row: {
+          closed_at: string | null
+          closed_by: string | null
+          closing_date: string
+          courier_commission: number
+          courier_id: string
+          created_at: string
+          delivered_count: number
+          deposited_amount: number
+          failed_count: number
+          id: string
+          net_due: number
+          notes: string | null
+          postponed_count: number
+          reopened_at: string | null
+          reopened_by: string | null
+          returned_count: number
+          shipping_fees: number
+          shortage: number
+          status: string
+          surplus: number
+          total_collected: number
+          total_orders: number
+          updated_at: string
+        }
+        Insert: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_date?: string
+          courier_commission?: number
+          courier_id: string
+          created_at?: string
+          delivered_count?: number
+          deposited_amount?: number
+          failed_count?: number
+          id?: string
+          net_due?: number
+          notes?: string | null
+          postponed_count?: number
+          reopened_at?: string | null
+          reopened_by?: string | null
+          returned_count?: number
+          shipping_fees?: number
+          shortage?: number
+          status?: string
+          surplus?: number
+          total_collected?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Update: {
+          closed_at?: string | null
+          closed_by?: string | null
+          closing_date?: string
+          courier_commission?: number
+          courier_id?: string
+          created_at?: string
+          delivered_count?: number
+          deposited_amount?: number
+          failed_count?: number
+          id?: string
+          net_due?: number
+          notes?: string | null
+          postponed_count?: number
+          reopened_at?: string | null
+          reopened_by?: string | null
+          returned_count?: number
+          shipping_fees?: number
+          shortage?: number
+          status?: string
+          surplus?: number
+          total_collected?: number
+          total_orders?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       courier_collections: {
         Row: {
           amount: number | null
@@ -268,6 +393,39 @@ export type Database = {
           id?: string
           latitude?: number
           longitude?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      courier_wallets: {
+        Row: {
+          balance: number
+          courier_id: string
+          id: string
+          total_collected: number
+          total_commission: number
+          total_shortage: number
+          total_surplus: number
+          updated_at: string
+        }
+        Insert: {
+          balance?: number
+          courier_id: string
+          id?: string
+          total_collected?: number
+          total_commission?: number
+          total_shortage?: number
+          total_surplus?: number
+          updated_at?: string
+        }
+        Update: {
+          balance?: number
+          courier_id?: string
+          id?: string
+          total_collected?: number
+          total_commission?: number
+          total_shortage?: number
+          total_surplus?: number
           updated_at?: string
         }
         Relationships: []
@@ -463,6 +621,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      financial_logs: {
+        Row: {
+          action: string
+          after_json: Json | null
+          before_json: Json | null
+          created_at: string
+          entity_id: string | null
+          entity_type: string
+          id: string
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          after_json?: Json | null
+          before_json?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type: string
+          id?: string
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          after_json?: Json | null
+          before_json?: Json | null
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string
+          id?: string
+          user_id?: string | null
+        }
+        Relationships: []
       }
       messages: {
         Row: {
@@ -732,6 +923,7 @@ export type Database = {
           priority: string | null
           product_id: string | null
           product_name: string | null
+          qr_value: string | null
           quantity: number | null
           returned_to_sender: boolean
           returned_to_sender_at: string | null
@@ -769,6 +961,7 @@ export type Database = {
           priority?: string | null
           product_id?: string | null
           product_name?: string | null
+          qr_value?: string | null
           quantity?: number | null
           returned_to_sender?: boolean
           returned_to_sender_at?: string | null
@@ -806,6 +999,7 @@ export type Database = {
           priority?: string | null
           product_id?: string | null
           product_name?: string | null
+          qr_value?: string | null
           quantity?: number | null
           returned_to_sender?: boolean
           returned_to_sender_at?: string | null
@@ -920,6 +1114,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      treasury_transactions: {
+        Row: {
+          amount: number
+          balance_after: number
+          created_at: string
+          created_by: string | null
+          id: string
+          notes: string | null
+          reference_id: string | null
+          source: string
+          type: string
+        }
+        Insert: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reference_id?: string | null
+          source?: string
+          type?: string
+        }
+        Update: {
+          amount?: number
+          balance_after?: number
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          notes?: string | null
+          reference_id?: string | null
+          source?: string
+          type?: string
+        }
+        Relationships: []
       }
       user_permissions: {
         Row: {
