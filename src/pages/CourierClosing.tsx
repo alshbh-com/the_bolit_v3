@@ -192,7 +192,7 @@ export default function CourierClosing() {
           <Card key={i} className="glass-effect border-border">
             <CardContent className="p-3 text-center">
               <div className="text-xs text-muted-foreground">{label as string}</div>
-              <div className={`text-lg font-bold font-mono-neon neon-text${(val as any) && (label === 'عجز' ? '-magenta' : '')}`}>{val}</div>
+              <div className={`text-lg font-bold font-mono-neon ${label === 'عجز' && Number(val) > 0 ? 'neon-text-magenta' : 'neon-text'}`}>{val}</div>
             </CardContent>
           </Card>
         ))}
