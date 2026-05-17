@@ -133,6 +133,7 @@ const App = () => (
               <Route path="/trash" element={<TrashBin />} />
               <Route path="/system-guide" element={<SystemGuide />} />
               <Route path="/chat" element={<InternalChat />} />
+              <Route path="/barcode-scan" element={<BarcodeScan />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
