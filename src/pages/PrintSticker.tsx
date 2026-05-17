@@ -160,7 +160,8 @@ export default function PrintSticker() {
         .invoice-page { page-break-after: always; padding: 10mm 0; }
         .invoice-page:last-child { page-break-after: auto; }
         .header { text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .date { text-align: center; margin-bottom: 20px; color: #666; font-size: 13px; }
+        .date { text-align: center; margin-bottom: 12px; color: #666; font-size: 13px; }
+        .bar-wrap { text-align: center; margin-bottom: 16px; }
         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
         th, td { border: 1px solid #333; padding: 10px 14px; text-align: right; font-size: 14px; }
         th { background: #f0f0f0; font-weight: bold; width: 30%; }
