@@ -82,11 +82,15 @@ export default function PrintSticker() {
     const stickers = selectedOrders.map(order => {
       const total = Number(order.price) + Number(order.delivery_price);
       const barcode = order.barcode || '';
+      const tracking = order.tracking_id || '';
+      const barImg = barcodeDataUrl(barcode);
       return `
         <div class="sticker">
           <div class="header">The Pilito</div>
           <div class="date">${new Date(order.created_at).toLocaleDateString('ar-EG')}</div>
+          ${barImg ? `<img class="bar-img" src="${barImg}" alt="barcode"/>` : ''}
           <div class="barcode-num">${barcode}</div>
+          ${tracking ? `<div class="tracking">رقم التتبع: <b>${tracking}</b></div>` : ''}
           <div class="row"><span>الكود: <b>${order.customer_code || '-'}</b></span></div>
           <div class="info">العميل: <b>${order.customer_name}</b></div>
           <div class="info">المكتب: <b>${order.offices?.name || '-'}</b></div>
