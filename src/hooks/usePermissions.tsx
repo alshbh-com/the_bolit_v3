@@ -16,6 +16,7 @@ export const ALL_SECTIONS = [
   { key: 'unassigned-orders', label: 'جميع الأوردرات', url: '/unassigned-orders' },
   { key: 'closed-orders', label: 'الأوردرات القديمة', url: '/closed-orders' },
   { key: 'search', label: 'بحث شامل', url: '/search' },
+  { key: 'barcode-scan', label: 'قراءة الباركود', url: '/barcode-scan' },
   { key: 'offices', label: 'المكاتب', url: '/offices' },
   { key: 'delivery-prices', label: 'أسعار التوصيل', url: '/delivery-prices' },
   { key: 'companies', label: 'الشركات', url: '/companies' },

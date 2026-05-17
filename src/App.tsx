@@ -37,6 +37,7 @@ import ProfitReport from "@/pages/ProfitReport";
 import TripsReport from "@/pages/TripsReport";
 import CourierReceipt from "@/pages/CourierReceipt";
 import CourierMonthlyReport from "@/pages/CourierMonthlyReport";
+import BarcodeScan from "@/pages/BarcodeScan";
 
 import StatusManagement from "@/pages/StatusManagement";
 import OrderNotes from "@/pages/OrderNotes";
@@ -132,6 +133,7 @@ const App = () => (
               <Route path="/trash" element={<TrashBin />} />
               <Route path="/system-guide" element={<SystemGuide />} />
               <Route path="/chat" element={<InternalChat />} />
+              <Route path="/barcode-scan" element={<BarcodeScan />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -871,6 +871,36 @@ export type Database = {
           },
         ]
       }
+      order_status_history: {
+        Row: {
+          changed_at: string
+          changed_by: string | null
+          id: string
+          new_status_id: string | null
+          old_status_id: string | null
+          order_id: string
+          source: string
+        }
+        Insert: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status_id?: string | null
+          old_status_id?: string | null
+          order_id: string
+          source?: string
+        }
+        Update: {
+          changed_at?: string
+          changed_by?: string | null
+          id?: string
+          new_status_id?: string | null
+          old_status_id?: string | null
+          order_id?: string
+          source?: string
+        }
+        Relationships: []
+      }
       order_statuses: {
         Row: {
           color: string | null
@@ -1114,6 +1144,62 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      scan_session_items: {
+        Row: {
+          id: string
+          order_id: string
+          scanned_at: string
+          session_id: string
+        }
+        Insert: {
+          id?: string
+          order_id: string
+          scanned_at?: string
+          session_id: string
+        }
+        Update: {
+          id?: string
+          order_id?: string
+          scanned_at?: string
+          session_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "scan_session_items_session_id_fkey"
+            columns: ["session_id"]
+            isOneToOne: false
+            referencedRelation: "scan_sessions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      scan_sessions: {
+        Row: {
+          ended_at: string | null
+          id: string
+          notes: string | null
+          started_at: string
+          total_count: number
+          user_id: string | null
+        }
+        Insert: {
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          total_count?: number
+          user_id?: string | null
+        }
+        Update: {
+          ended_at?: string | null
+          id?: string
+          notes?: string | null
+          started_at?: string
+          total_count?: number
+          user_id?: string | null
+        }
+        Relationships: []
       }
       treasury_transactions: {
         Row: {

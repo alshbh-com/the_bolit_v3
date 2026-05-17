@@ -3,7 +3,7 @@ import {
   Truck, Wallet, CreditCard, ScrollText, Settings, LogOut, Archive, Building,
   PackageSearch, Search, Printer, DollarSign, MapPin, Users, BarChart3,
   TrendingUp, Calendar, UserCheck, MessageSquare, Locate, FileSpreadsheet,
-  CircleDot, Calculator, Contact, ClipboardList, Trash2, FileBarChart, Navigation2, BookOpen, Receipt, Lock
+  CircleDot, Calculator, Contact, ClipboardList, Trash2, FileBarChart, Navigation2, BookOpen, Receipt, Lock, ScanLine
 } from 'lucide-react';
 import logo from '@/assets/logo.jpg';
 import { NavLink } from '@/components/NavLink';
@@ -23,6 +23,7 @@ const mainItems = [
   { title: 'الأوردرات القديمة', url: '/closed-orders', icon: Archive },
   { title: 'استيراد Excel', url: '/excel-import', icon: ClipboardList },
   { title: 'بحث شامل', url: '/search', icon: Search },
+  { title: 'قراءة الباركود', url: '/barcode-scan', icon: ScanLine },
 ];
 
 const managementItems = [

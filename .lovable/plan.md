@@ -1,40 +1,71 @@
 
+# قسم "قراءة الباركود" (Bulk Barcode Scanning)
 
-## المشكلة
+## نظرة عامة
+صفحة جديدة `/barcode-scan` تستخدم جهاز الـ Scanner (يعمل ككيبورد) لقراءة عدة أوردرات في Session واحدة، ثم تطبيق Actions جماعية عليها مع تحديث فوري (Realtime) لكل النظام.
 
-عند تقفيل أوردرات المندوب (من صفحة المناديب أو تحصيلات المناديب)، يتم تعيين `is_closed = true` على الأوردر. هذا يجعل الأوردر يختفي من **حسابات المكاتب** لأن الصفحة تفلتر فقط الأوردرات اللي `is_closed = false`.
+## ملاحظات مهمة قبل البناء
+نظامك الحالي يحتوي بالفعل على:
+- جدول `orders` فيه `barcode`, `tracking_id`, `qr_value` يتم توليدها تلقائياً عبر trigger ✅
+- جدول `order_statuses` لإدارة الحالات (لذلك لن أفرض حالات ثابتة، بل سأقرأها من قاعدة البيانات) ✅
+- جدول `activity_logs` للسجلات ✅
+- مكوّن `BarcodeScanner` للكاميرا و`PrintSticker` للطباعة ✅
+- نظام صلاحيات `usePermissions`
 
-النتيجة: الأوردرات المقفلة بتروح للأوردرات القديمة بدل ما تظهر في حسابات المكاتب، فالمستخدم مش بيقدر يحسب مع المكتب.
+لذلك سأبني فوق الموجود وليس تكراره.
 
-## الحل
+## ما سيتم بناؤه
 
-فصل مفهوم "تقفيل المندوب" عن "تقفيل المكتب" بإضافة عمود جديد `is_courier_closed` للأوردرات.
+### 1. قاعدة البيانات (migration واحدة)
+- `scan_sessions`: id, user_id, started_at, ended_at, total_count, notes
+- `scan_session_items`: session_id, order_id, scanned_at, unique(session_id, order_id) لمنع التكرار
+- `order_status_history`: order_id, old_status_id, new_status_id, changed_by, changed_at, source (`scan`/`manual`/`bulk`)
+- تفعيل Realtime على `orders`, `scan_session_items`, `order_status_history`
+- RLS: authenticated فقط (متوافق مع باقي النظام)
 
-### التغييرات المطلوبة
+### 2. الصفحة الجديدة `src/pages/BarcodeScan.tsx`
+- زر كبير "ابدأ الاسكان" → يفتح وضع الاسكان
+- Input ضخم auto-focus يستقبل قراءات المسدس (Enter = نهاية الكود)
+- Live counter + جدول بالأوردرات الممسوحة (رقم/عميل/مندوب/حالة/مبلغ/عنوان)
+- صوت نجاح/خطأ (Web Audio API، بدون ملفات)
+- منع: التكرار، الأوردرات المقفلة، غير الموجودة، المرتجعة (مع Toast واضح)
+- زر "انتهيت" → يفتح Dialog الـ Bulk Actions
 
-**1. Migration: إضافة عمود `is_courier_closed`**
-- إضافة عمود `is_courier_closed boolean default false` لجدول `orders`
-- تحديث الأوردرات الحالية المقفلة اللي ليها `courier_id` بحيث `is_courier_closed = true`
+### 3. Bulk Actions Dialog
+- تغيير الحالة (من `order_statuses` ديناميكياً)
+- قفل الأوردرات (`is_closed=true`)
+- إرجاع للراسل (`returned_to_sender=true`)
+- تعيين/إلغاء تعيين مندوب
+- طباعة فواتير/ستيكرات جماعية (يعيد استخدام منطق `PrintSticker`)
+- تصدير PDF (jsPDF) و Excel (xlsx — موجود بالفعل في المشروع)
+- حذف من القائمة الحالية
 
-**2. تعديل عمليات تقفيل المندوب**
-- في `Couriers.tsx` و `CourierCollections.tsx`: تغيير التقفيل ليعمل `is_courier_closed = true` بدلاً من `is_closed = true`
-- الأوردر يختفي من المندوب لكن يفضل ظاهر في حسابات المكاتب
+كل Action:
+- يُحدث `orders` (مع `last_modified_by` عبر الـ trigger الموجود)
+- يكتب صف في `order_status_history` (للتغييرات الحالاتية)
+- يكتب `activity_logs` للسجل
+- Realtime يحدّث باقي الصفحات (Orders, ClosedOrders, CourierFollowup) تلقائياً
 
-**3. تعديل صفحة حسابات المكاتب (`OfficeAccounts.tsx`)**
-- تغيير الفلتر من `is_closed = false` إلى عرض الأوردرات اللي `is_closed = false` (بغض النظر عن `is_courier_closed`)
-- كده الأوردرات المقفلة من المندوب هتظهر في حسابات المكاتب
+### 4. الـ Sidebar
+إضافة بند جديد "قراءة الباركود" في مجموعة "الأدوات" مع أيقونة `ScanBarcode`.
 
-**4. تعديل صفحة أوردرات المندوب**
-- إخفاء الأوردرات اللي `is_courier_closed = true` من عند المندوب
+### 5. الـ Routing
+تسجيل المسار في `App.tsx` تحت `AppLayout` المحمي.
 
-**5. تعديل صفحة الأوردرات القديمة**
-- الأوردرات القديمة تبقى فقط اللي `is_closed = true` (التقفيل النهائي بعد حساب المكتب)
+## ما لن أبنيه (لتجنّب التضخّم)
+- `order_items`: نظامك الحالي يعتمد على صف واحد لكل أوردر (`product_id`, `quantity`); لن أغيّر هذا الـ schema الكبير.
+- `courier_daily_reports`: عندك بالفعل `courier_closings` + `courier_wallets` تؤدي نفس الغرض.
+- إعادة توليد Barcode/QR: يتم بالفعل تلقائياً عبر trigger `generate_order_barcode`.
 
-### الملفات المتأثرة
-- Migration SQL جديد
-- `src/pages/Couriers.tsx` — تقفيل المندوب يستخدم `is_courier_closed`
-- `src/pages/CourierCollections.tsx` — نفس التعديل
-- `src/pages/OfficeAccounts.tsx` — الفلتر يبقى كما هو (is_closed = false) فالأوردرات المقفلة من المندوب هتظهر
-- `src/pages/Orders.tsx` — التقفيل الرئيسي يبقى `is_closed = true` (تقفيل نهائي)
-- `src/pages/CourierOrders.tsx` — إخفاء الأوردرات اللي `is_courier_closed = true`
+## التقنيات
+- Realtime: `supabase.channel().on('postgres_changes')`
+- Sounds: Web Audio API (بدون assets خارجية)
+- Export: مكتبة `xlsx` (موجودة) + `jspdf` (موجودة)
+- UI: shadcn + Tailwind + الـ design tokens (Neon Cyberpunk) الحالية
 
+## خطوات التنفيذ
+1. Migration واحدة (الجداول + Realtime + RLS)
+2. إنشاء `src/pages/BarcodeScan.tsx` + `src/components/BulkActionsDialog.tsx` + hook `src/hooks/useScanSession.ts`
+3. تحديث `AppSidebar` + `App.tsx`
+
+موافق أبدأ التنفيذ؟
