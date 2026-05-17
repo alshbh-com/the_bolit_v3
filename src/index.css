@@ -72,38 +72,20 @@
     @apply bg-background text-foreground;
     font-family: 'Cairo', 'Segoe UI', Tahoma, sans-serif;
     background-image:
-      linear-gradient(180deg, hsl(240 35% 6% / 0.78), hsl(240 40% 4% / 0.88)),
-      radial-gradient(ellipse 80% 60% at 90% 0%, hsl(320 100% 55% / 0.22), transparent 60%),
-      radial-gradient(ellipse 70% 60% at 10% 100%, hsl(180 100% 50% / 0.22), transparent 60%),
+      linear-gradient(180deg, hsl(0 0% 100% / 0.88), hsl(0 0% 100% / 0.92)),
       url('/login-bg.jpg');
-    background-size: cover, auto, auto, cover;
-    background-position: center, center, center, center;
+    background-size: cover, cover;
+    background-position: center, center;
     background-attachment: fixed;
     background-repeat: no-repeat;
     min-height: 100vh;
-    position: relative;
-  }
-
-  body::before {
-    content: '';
-    position: fixed;
-    inset: 0;
-    pointer-events: none;
-    background-image:
-      linear-gradient(hsl(180 100% 50% / 0.04) 1px, transparent 1px),
-      linear-gradient(90deg, hsl(180 100% 50% / 0.04) 1px, transparent 1px);
-    background-size: 48px 48px;
-    mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 90%);
-    -webkit-mask-image: radial-gradient(ellipse 80% 80% at 50% 50%, black 30%, transparent 90%);
-    z-index: 0;
   }
 
   ::-webkit-scrollbar { width: 8px; height: 8px; }
-  ::-webkit-scrollbar-track { background: hsl(240 35% 6%); }
+  ::-webkit-scrollbar-track { background: hsl(220 14% 96%); }
   ::-webkit-scrollbar-thumb {
-    background: linear-gradient(180deg, hsl(180 100% 50%), hsl(320 100% 55%));
+    background: hsl(25 95% 53%);
     border-radius: 4px;
-    box-shadow: 0 0 8px hsl(180 100% 50% / 0.5);
   }
 }
 
