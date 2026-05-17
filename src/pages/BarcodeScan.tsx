@@ -119,10 +119,10 @@ export default function BarcodeScan() {
     const code = rawCode.trim();
     if (!code || !sessionId) return;
 
-    // Search by barcode, tracking_id, or id
+    // Search by barcode or tracking_id
     const { data, error } = await supabase
       .from('orders')
-      .select('id, barcode, tracking_id, customer_name, customer_phone, address, price, delivery_price, status_id, courier_id, is_closed, returned_to_sender, order_statuses(name), profiles!orders_courier_id_fkey(full_name)')
+      .select('id, barcode, tracking_id, customer_name, customer_phone, address, price, delivery_price, status_id, courier_id, is_closed, returned_to_sender')
       .or(`barcode.eq.${code},tracking_id.eq.${code}`)
       .limit(1)
       .maybeSingle();
