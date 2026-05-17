@@ -36,10 +36,6 @@ const managementItems = [
 ];
 
 const accountingItems = [
-  { title: 'التقفيل اليومي', url: '/courier-closing', icon: Lock },
-  { title: 'أرشيف التقفيلات', url: '/closings-archive', icon: Archive },
-  { title: 'الخزنة', url: '/treasury', icon: Wallet },
-  { title: 'كشف حساب المندوب', url: '/courier-statement', icon: ClipboardList },
   { title: 'تحصيلات المندوبين', url: '/courier-collections', icon: Wallet },
   { title: 'متابعة المندوبين', url: '/courier-followup', icon: MessageSquare },
   { title: 'حسابات المكاتب', url: '/office-accounts', icon: Building },
