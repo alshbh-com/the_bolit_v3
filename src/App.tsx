@@ -136,6 +136,10 @@ const App = () => (
               <Route path="/trash" element={<TrashBin />} />
               <Route path="/system-guide" element={<SystemGuide />} />
               <Route path="/chat" element={<InternalChat />} />
+              <Route path="/courier-closing" element={<CourierClosing />} />
+              <Route path="/closings-archive" element={<ClosingsArchive />} />
+              <Route path="/treasury" element={<Treasury />} />
+              <Route path="/courier-statement" element={<CourierStatement />} />
             </Route>
             <Route path="*" element={<NotFound />} />
           </Routes>
