@@ -592,9 +592,36 @@ export default function CourierCollections() {
                           <TableCell className="text-xs">{o.address || '-'}</TableCell>
                           <TableCell className="font-bold">{Number(o.price) + Number(o.delivery_price)} ج.م</TableCell>
                           <TableCell>
-                            <Badge style={{ backgroundColor: o.order_statuses?.color }} className="text-xs">
-                              {o.order_statuses?.name || '-'}
-                            </Badge>
+                            <Select
+                              value={o.status_id || ''}
+                              onValueChange={async (v) => {
+                                const prev = o.status_id;
+                                setOrders(curr => curr.map(x => x.id === o.id ? { ...x, status_id: v, order_statuses: statuses.find(s => s.id === v) || null } : x));
+                                const { error } = await supabase.from('orders').update({ status_id: v }).eq('id', o.id);
+                                if (error) {
+                                  toast.error('فشل تحديث الحالة');
+                                  setOrders(curr => curr.map(x => x.id === o.id ? { ...x, status_id: prev, order_statuses: statuses.find(s => s.id === prev) || null } : x));
+                                } else {
+                                  toast.success('تم تحديث الحالة');
+                                  logActivity('تغيير حالة أوردر من تحصيلات المندوب', { order_id: o.id, new_status_id: v });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-7 w-32 bg-secondary border-border text-xs">
+                                <SelectValue placeholder="-">
+                                  {o.order_statuses?.name ? (
+                                    <Badge style={{ backgroundColor: o.order_statuses?.color }} className="text-xs">
+                                      {o.order_statuses.name}
+                                    </Badge>
+                                  ) : '-'}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {statuses.map(s => (
+                                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                           </TableCell>
                           <TableCell className="font-bold text-primary">{collected > 0 ? `${collected} ج.م` : '-'}</TableCell>
                           <TableCell>

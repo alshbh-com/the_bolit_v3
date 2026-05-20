@@ -3,7 +3,6 @@ const ACTIVE_COURIER_STATUS_NAMES = new Set([
   'قيد التوصيل',
   'مؤجل',
   'لم يرد',
-  'لايرد',
 ]);
 
 type CourierOrderLike = {
