@@ -83,7 +83,7 @@ export default function Login() {
           {/* Credit */}
           <p className="mt-6 text-center text-[11px] text-muted-foreground leading-relaxed">
             تم صنع السيستم من شركة{' '}
-            <span className="font-display tracking-widest text-secondary neon-text-magenta">دوبامين</span>{' '}
+            <span className="font-display tracking-widest text-white">دوبامين</span>{' '}
             للبرمجة <span className="text-muted-foreground/70">(الشبح سابقاً)</span>
             <span className="block mt-1 font-mono-neon tracking-widest text-primary" dir="ltr">
               <a href="https://wa.me/201061067966" target="_blank" rel="noopener noreferrer" className="hover:underline">
