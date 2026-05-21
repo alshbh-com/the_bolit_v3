@@ -726,7 +726,36 @@ export default function OfficeAccounts() {
                         <TableCell className="text-sm font-bold text-primary">{net} ج.م</TableCell>
                         <TableCell>
                           <div className="flex flex-col gap-1">
-                            {status ? <Badge style={{ backgroundColor: status.color }} className="text-xs">{status.name}</Badge> : '-'}
+                            <Select
+                              value={o.status_id || ''}
+                              onValueChange={async (v) => {
+                                const prev = o.status_id;
+                                setOfficeOrders(curr => curr.map(x => x.id === o.id ? { ...x, status_id: v } : x));
+                                const { error } = await supabase.from('orders').update({ status_id: v }).eq('id', o.id);
+                                if (error) {
+                                  toast.error('فشل تحديث الحالة');
+                                  setOfficeOrders(curr => curr.map(x => x.id === o.id ? { ...x, status_id: prev } : x));
+                                } else {
+                                  toast.success('تم تحديث الحالة');
+                                  logActivity('تغيير حالة أوردر من حسابات المكاتب', { order_id: o.id, new_status_id: v });
+                                }
+                              }}
+                            >
+                              <SelectTrigger className="h-7 w-32 bg-secondary border-border text-xs">
+                                <SelectValue placeholder="-">
+                                  {status ? (
+                                    <Badge style={{ backgroundColor: status.color }} className="text-xs">
+                                      {status.name}
+                                    </Badge>
+                                  ) : '-'}
+                                </SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {statuses.map(s => (
+                                  <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
                             {o.returned_to_sender && <Badge className="text-[10px] bg-rose-600 hover:bg-rose-700 text-white">تم ارتجاعه للراسل</Badge>}
                           </div>
                         </TableCell>
