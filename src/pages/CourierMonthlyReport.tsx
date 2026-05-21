@@ -140,17 +140,21 @@ export default function CourierMonthlyReport() {
       totalShipping += Number(o.shipping_paid || 0);
       courierCommission += courierCommissionRate;
     });
+    let rejectionCommission = 0;
+    grouped.rejUnpaid.forEach(() => {
+      rejectionCommission += rejectionCommissionRate;
+    });
 
     const countableOrders = grouped.delivered.length + grouped.partial.length + grouped.rejPaid.length;
     const collectedByCourier = collections.reduce((s, c) => s + Number(c.amount || 0), 0);
-    const netDueToCompany = totalRevenue - courierCommission - collectedByCourier;
+    const netDueToCompany = totalRevenue - courierCommission - rejectionCommission - collectedByCourier;
     const remainingShipping = totalShipping - collectedByCourier;
 
     return {
-      totalRevenue, totalShipping, courierCommission, officeCommission,
+      totalRevenue, totalShipping, courierCommission, rejectionCommission, officeCommission,
       countableOrders, collectedByCourier, netDueToCompany, remainingShipping,
     };
-  }, [grouped, courierCommissionRate, collections]);
+  }, [grouped, courierCommissionRate, rejectionCommissionRate, collections]);
 
   const reportColumns = [
     { key: 'created_at', label: 'التاريخ', format: (v: any) => v ? new Date(v).toLocaleDateString('ar-EG') : '-' },
