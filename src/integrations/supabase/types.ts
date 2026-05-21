@@ -1104,6 +1104,7 @@ export type Database = {
           notes: string | null
           office_id: string | null
           phone: string | null
+          rejection_commission: number | null
           salary: number | null
           updated_at: string
         }
@@ -1118,6 +1119,7 @@ export type Database = {
           notes?: string | null
           office_id?: string | null
           phone?: string | null
+          rejection_commission?: number | null
           salary?: number | null
           updated_at?: string
         }
@@ -1132,6 +1134,7 @@ export type Database = {
           notes?: string | null
           office_id?: string | null
           phone?: string | null
+          rejection_commission?: number | null
           salary?: number | null
           updated_at?: string
         }
