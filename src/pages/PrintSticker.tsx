@@ -123,53 +123,143 @@ export default function PrintSticker() {
 
   const printInvoice = () => {
     if (selectedOrders.length === 0) { toast.error('اختر أوردرات للطباعة'); return; }
-    const printWindow = window.open('', '_blank', 'width=800,height=1000');
+    const printWindow = window.open('', '_blank', 'width=900,height=1100');
     if (!printWindow) return;
 
+    const today = new Date().toLocaleDateString('ar-EG', { day: '2-digit', month: '2-digit', year: 'numeric' });
+
     const invoicesHtml = selectedOrders.map((order, i) => {
-      const total = Number(order.price) + Number(order.delivery_price);
+      const price = Number(order.price) || 0;
+      const shipping = Number(order.delivery_price) || 0;
+      const total = price + shipping;
       const barcode = order.barcode || '';
       const tracking = order.tracking_id || '';
       const barImg = barcodeDataUrl(barcode);
+      const orderDate = order.created_at ? new Date(order.created_at).toLocaleDateString('ar-EG') : '-';
       return `
-        <div class="invoice-page">
-          <div class="header">The Pilito</div>
-          <div class="date">${new Date().toLocaleDateString('ar-EG')} - فاتورة ${i + 1} من ${selectedOrders.length}</div>
-          ${barImg ? `<div class="bar-wrap"><img src="${barImg}" alt="barcode" style="height:60px"/><div style="font-family:monospace;font-size:16px;letter-spacing:2px;margin-top:4px">${barcode}</div></div>` : ''}
-          <table>
-            <tr><th>رقم التتبع</th><td style="font-family:monospace;direction:ltr;font-weight:bold">${tracking}</td></tr>
-            <tr><th>الباركود</th><td style="font-family:monospace;direction:ltr">${barcode}</td></tr>
-            <tr><th>الكود</th><td>${order.customer_code || '-'}</td></tr>
-            <tr><th>اسم العميل</th><td>${order.customer_name}</td></tr>
-            <tr><th>الهاتف</th><td dir="ltr">${order.customer_phone}</td></tr>
-            <tr><th>المكتب</th><td>${order.offices?.name || '-'}</td></tr>
-            <tr><th>العنوان</th><td>${order.address || '-'}</td></tr>
-            <tr><th>المنتج</th><td>${order.product_name || '-'}</td></tr>
-            <tr><th>الكمية</th><td>${order.quantity}</td></tr>
-            <tr><th>السعر</th><td>${Number(order.price)} ج.م</td></tr>
-            <tr><th>الشحن</th><td>${Number(order.delivery_price)} ج.م</td></tr>
-          </table>
-          <div class="total">الإجمالي: ${total} ج.م</div>
-        </div>`;
+        <section class="invoice">
+          <!-- Brand bar -->
+          <header class="brand-bar">
+            <div class="brand">
+              <div class="brand-mark">TP</div>
+              <div class="brand-text">
+                <h1>The Pilito</h1>
+                <p>نظام التوصيل والشحن</p>
+              </div>
+            </div>
+            <div class="meta">
+              <div class="meta-row"><span>فاتورة رقم</span><b>#${barcode || (i + 1)}</b></div>
+              <div class="meta-row"><span>تاريخ الطباعة</span><b>${today}</b></div>
+              <div class="meta-row"><span>تاريخ الأوردر</span><b>${orderDate}</b></div>
+            </div>
+          </header>
+
+          <!-- Barcode strip -->
+          ${barImg ? `
+          <div class="barcode-strip">
+            <img src="${barImg}" alt="barcode"/>
+            <div class="barcode-num">${barcode}</div>
+            ${tracking ? `<div class="tracking">رقم التتبع: <b>${tracking}</b></div>` : ''}
+          </div>` : ''}
+
+          <!-- Two-column details -->
+          <div class="details">
+            <div class="card">
+              <h3>بيانات العميل</h3>
+              <div class="row"><span>الاسم</span><b>${order.customer_name || '-'}</b></div>
+              <div class="row"><span>الهاتف</span><b dir="ltr">${order.customer_phone || '-'}</b></div>
+              <div class="row"><span>الكود</span><b>${order.customer_code || '-'}</b></div>
+              <div class="row full"><span>العنوان</span><b>${order.address || '-'}</b></div>
+            </div>
+            <div class="card">
+              <h3>بيانات الشحنة</h3>
+              <div class="row"><span>المكتب</span><b>${order.offices?.name || '-'}</b></div>
+              <div class="row"><span>المنتج</span><b>${order.product_name || '-'}</b></div>
+              <div class="row"><span>الكمية</span><b>${order.quantity || 1}</b></div>
+              <div class="row"><span>المقاس</span><b>${order.size || '-'}</b></div>
+              <div class="row"><span>اللون</span><b>${order.color || '-'}</b></div>
+              ${order.notes ? `<div class="row full"><span>ملاحظات</span><b>${order.notes}</b></div>` : ''}
+            </div>
+          </div>
+
+          <!-- Totals -->
+          <div class="totals">
+            <div class="t-line"><span>سعر الأوردر</span><b>${price.toLocaleString()} ج.م</b></div>
+            <div class="t-line"><span>الشحن</span><b>${shipping.toLocaleString()} ج.م</b></div>
+            <div class="t-line grand"><span>الإجمالي المطلوب تحصيله</span><b>${total.toLocaleString()} ج.م</b></div>
+          </div>
+
+          <!-- Signatures -->
+          <div class="signs">
+            <div class="sign"><span>توقيع المندوب</span><div class="line"></div></div>
+            <div class="sign"><span>توقيع العميل</span><div class="line"></div></div>
+            <div class="sign"><span>الختم</span><div class="line"></div></div>
+          </div>
+
+          <footer class="foot">شكراً لتعاملكم مع The Pilito — للاستفسار يرجى ذكر رقم التتبع</footer>
+        </section>`;
     }).join('');
 
-    printWindow.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
+    printWindow.document.write(`<!DOCTYPE html><html dir="rtl" lang="ar"><head><meta charset="UTF-8">
+      <title>فواتير - The Pilito</title>
+      <link rel="preconnect" href="https://fonts.googleapis.com">
+      <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap" rel="stylesheet">
       <style>
-        @page { size: A4; margin: 15mm; }
-        body { font-family: 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; }
-        .invoice-page { page-break-after: always; padding: 10mm 0; }
-        .invoice-page:last-child { page-break-after: auto; }
-        .header { text-align: center; font-size: 28px; font-weight: bold; margin-bottom: 10px; }
-        .date { text-align: center; margin-bottom: 12px; color: #666; font-size: 13px; }
-        .bar-wrap { text-align: center; margin-bottom: 16px; }
-        table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-        th, td { border: 1px solid #333; padding: 10px 14px; text-align: right; font-size: 14px; }
-        th { background: #f0f0f0; font-weight: bold; width: 30%; }
-        .total { font-size: 22px; font-weight: bold; text-align: center; border: 3px solid #000; padding: 12px; }
+        @page { size: A4; margin: 0; }
+        * { box-sizing: border-box; }
+        body { font-family: 'Cairo', 'Segoe UI', Arial, sans-serif; margin: 0; padding: 0; background: #fff; color: #1a1a1a; }
+        .invoice { width: 210mm; min-height: 297mm; padding: 14mm 12mm; page-break-after: always; display: flex; flex-direction: column; }
+        .invoice:last-child { page-break-after: auto; }
+
+        /* Brand bar */
+        .brand-bar { display: flex; justify-content: space-between; align-items: center; padding: 14px 18px; border-radius: 14px; background: linear-gradient(135deg, #f97316, #fb923c); color: #fff; box-shadow: 0 6px 18px rgba(249,115,22,0.25); }
+        .brand { display: flex; align-items: center; gap: 14px; }
+        .brand-mark { width: 56px; height: 56px; border-radius: 14px; background: #fff; color: #f97316; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 22px; letter-spacing: -1px; }
+        .brand-text h1 { margin: 0; font-size: 24px; font-weight: 800; letter-spacing: -0.5px; }
+        .brand-text p { margin: 2px 0 0; font-size: 12px; opacity: 0.9; }
+        .meta { display: flex; flex-direction: column; gap: 4px; text-align: left; font-size: 12px; }
+        .meta-row { display: flex; gap: 8px; justify-content: flex-end; }
+        .meta-row span { opacity: 0.85; }
+        .meta-row b { background: rgba(255,255,255,0.18); padding: 2px 8px; border-radius: 6px; }
+
+        /* Barcode strip */
+        .barcode-strip { margin: 16px 0 14px; padding: 12px; border: 1.5px dashed #f97316; border-radius: 12px; text-align: center; background: #fff7ed; }
+        .barcode-strip img { height: 56px; max-width: 60%; }
+        .barcode-num { font-family: 'Courier New', monospace; font-size: 16px; font-weight: 700; letter-spacing: 3px; margin-top: 4px; color: #1a1a1a; }
+        .tracking { font-size: 12px; color: #444; margin-top: 4px; }
+
+        /* Details */
+        .details { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 14px; }
+        .card { border: 1px solid #e5e7eb; border-radius: 12px; padding: 12px 14px; background: #fafafa; }
+        .card h3 { margin: 0 0 8px; font-size: 13px; color: #f97316; font-weight: 700; padding-bottom: 6px; border-bottom: 2px solid #fed7aa; }
+        .row { display: flex; justify-content: space-between; gap: 10px; padding: 5px 0; font-size: 12.5px; border-bottom: 1px dotted #e5e7eb; }
+        .row:last-child { border-bottom: none; }
+        .row span { color: #6b7280; }
+        .row b { color: #111; font-weight: 600; text-align: left; }
+        .row.full { flex-direction: column; gap: 4px; }
+        .row.full b { text-align: right; line-height: 1.5; }
+
+        /* Totals */
+        .totals { margin-top: auto; border: 1.5px solid #1a1a1a; border-radius: 12px; overflow: hidden; }
+        .t-line { display: flex; justify-content: space-between; padding: 10px 16px; font-size: 14px; border-bottom: 1px solid #e5e7eb; }
+        .t-line:last-child { border-bottom: none; }
+        .t-line span { color: #444; }
+        .t-line b { font-weight: 700; }
+        .t-line.grand { background: #1a1a1a; color: #fff; font-size: 18px; padding: 14px 16px; }
+        .t-line.grand span { color: #fed7aa; }
+        .t-line.grand b { color: #fff; font-size: 22px; }
+
+        /* Signatures */
+        .signs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 24px; margin-top: 20px; }
+        .sign { text-align: center; font-size: 12px; color: #6b7280; }
+        .sign .line { margin-top: 28px; border-top: 1.5px solid #1a1a1a; }
+
+        /* Footer */
+        .foot { margin-top: 16px; text-align: center; font-size: 11px; color: #9ca3af; padding-top: 10px; border-top: 1px dashed #e5e7eb; }
       </style></head><body>${invoicesHtml}</body></html>`);
     printWindow.document.close();
     printWindow.focus();
-    printWindow.print();
+    setTimeout(() => printWindow.print(), 250);
   };
 
   return (
