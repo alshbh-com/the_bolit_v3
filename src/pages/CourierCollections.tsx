@@ -148,12 +148,19 @@ export default function CourierCollections() {
   const eligibleOrders = orders.filter(o => commissionStatuses.includes(o.status_id));
   const commissionTotal = eligibleOrders.length * rate;
 
+  // Rejection commission for "رفض ولم يدفع شحن"
+  const rejectionUnpaidStatus = statuses.find(s => s.name === 'رفض ولم يدفع شحن');
+  const courierProfile = couriers.find(c => c.id === selectedCourier);
+  const rejectionRate = Number(courierProfile?.rejection_commission || 0);
+  const rejectionOrders = orders.filter(o => rejectionUnpaidStatus && o.status_id === rejectionUnpaidStatus.id);
+  const rejectionCommissionTotal = rejectionOrders.length * rejectionRate;
+
   const officeCommissionBonuses = bonuses.filter(b => b.reason?.startsWith('__office_commission__'));
   const totalOfficeCommission = officeCommissionBonuses.reduce((sum, b) => sum + Number(b.amount), 0);
   const regularBonuses = bonuses.filter(b => !b.reason?.startsWith('__office_commission__'));
   const totalRegularBonuses = regularBonuses.reduce((sum, b) => sum + Number(b.amount), 0);
 
-  const netDue = totalCollection + totalOfficeCommission - commissionTotal - totalRegularBonuses;
+  const netDue = totalCollection + totalOfficeCommission - commissionTotal - rejectionCommissionTotal - totalRegularBonuses;
 
   const toggleStatus = (statusId: string) => {
     setCommissionStatuses(prev => prev.includes(statusId) ? prev.filter(s => s !== statusId) : [...prev, statusId]);
