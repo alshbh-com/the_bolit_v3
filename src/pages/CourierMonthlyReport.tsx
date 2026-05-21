@@ -268,6 +268,7 @@ export default function CourierMonthlyReport() {
             <BigCard label="إجمالي الإيراد" value={`${stats.totalRevenue.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-emerald-100/40 border-emerald-300 text-emerald-800" />
             <BigCard label="إجمالي الشحن" value={`${stats.totalShipping.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-amber-100/40 border-amber-300 text-amber-800" />
             <BigCard label={`عمولة المندوب (${courierCommissionRate}×${stats.countableOrders})`} value={`${stats.courierCommission.toLocaleString()} ج`} icon={<TrendingDown className="h-5 w-5" />} cls="bg-sky-100/40 border-sky-300 text-sky-800" />
+            <BigCard label={`عمولة الرفض (${rejectionCommissionRate}×${grouped.rejUnpaid.length})`} value={`${stats.rejectionCommission.toLocaleString()} ج`} icon={<TrendingDown className="h-5 w-5" />} cls="bg-rose-100/40 border-rose-300 text-rose-800" />
             <BigCard label="عمولة المكاتب" value={`${stats.officeCommission.toLocaleString()} ج`} icon={<TrendingDown className="h-5 w-5" />} cls="bg-purple-100/40 border-purple-300 text-purple-800" />
             <BigCard label="المحصّل من المندوب" value={`${stats.collectedByCourier.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-indigo-100/40 border-indigo-300 text-indigo-800" />
             <BigCard label="فاضل من الشحن" value={`${stats.remainingShipping.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-orange-100/40 border-orange-300 text-orange-800" />
