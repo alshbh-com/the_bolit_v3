@@ -96,6 +96,7 @@ export default function CourierMonthlyReport() {
 
   const courier = profiles[selectedCourier];
   const courierCommissionRate = Number(courier?.commission_amount || 0);
+  const rejectionCommissionRate = Number(courier?.rejection_commission || 0);
 
   const grouped = useMemo(() => {
     const delivered: any[] = [];
