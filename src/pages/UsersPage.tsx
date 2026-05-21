@@ -31,6 +31,7 @@ export default function UsersPage() {
 
   // Edit commission per courier
   const [commissionEdit, setCommissionEdit] = useState<Record<string, string>>({});
+  const [rejectionEdit, setRejectionEdit] = useState<Record<string, string>>({});
 
   // Edit password
   const [pwDialog, setPwDialog] = useState<any>(null);
