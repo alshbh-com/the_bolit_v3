@@ -342,6 +342,20 @@ export default function UsersPage() {
                       ) : <span className="text-xs text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
+                      {u.role === 'courier' ? (
+                        <div className="flex gap-1 items-center">
+                          <Input
+                            type="number"
+                            value={rejectionEdit[u.id] !== undefined ? rejectionEdit[u.id] : (u.rejection_commission ?? 0)}
+                            onChange={e => setRejectionEdit(prev => ({ ...prev, [u.id]: e.target.value }))}
+                            onBlur={() => rejectionEdit[u.id] !== undefined && saveRejection(u.id)}
+                            className="h-7 w-20 bg-secondary border-border text-xs"
+                          />
+                          <span className="text-xs text-muted-foreground">ج.م</span>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell>
                       <Badge variant={u.is_active ? 'default' : 'secondary'}>{u.is_active ? 'نشط' : 'غير نشط'}</Badge>
                     </TableCell>
                     <TableCell>
