@@ -168,6 +168,7 @@ export default function CourierMonthlyReport() {
     { key: 'courier_comm', label: 'عمولة المندوب', format: (_: any, r: any) => {
       const n = r.order_statuses?.name;
       if (DELIVERED_NAMES.includes(n) || PARTIAL_NAMES.includes(n) || REJECTED_PAID_NAMES.includes(n)) return `${courierCommissionRate} ج`;
+      if (REJECTED_UNPAID_NAMES.includes(n)) return `${rejectionCommissionRate} ج`;
       return '-';
     }},
     { key: 'office_comm', label: 'عمولة المكتب', format: (_: any, r: any) => {
