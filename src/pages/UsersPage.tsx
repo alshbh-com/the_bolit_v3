@@ -304,6 +304,7 @@ export default function UsersPage() {
                   <TableHead className="text-right">الصلاحية</TableHead>
                   <TableHead className="text-right">المكتب</TableHead>
                   <TableHead className="text-right">عمولة المندوب</TableHead>
+                  <TableHead className="text-right">عمولة الرفض (لم يدفع شحن)</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">إجراءات</TableHead>
                 </TableRow>
