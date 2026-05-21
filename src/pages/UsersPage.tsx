@@ -31,6 +31,7 @@ export default function UsersPage() {
 
   // Edit commission per courier
   const [commissionEdit, setCommissionEdit] = useState<Record<string, string>>({});
+  const [rejectionEdit, setRejectionEdit] = useState<Record<string, string>>({});
 
   // Edit password
   const [pwDialog, setPwDialog] = useState<any>(null);
@@ -126,6 +127,16 @@ export default function UsersPage() {
     if (error) { toast.error('فشل الحفظ'); return; }
     toast.success('تم حفظ العمولة');
     setCommissionEdit(prev => { const n = { ...prev }; delete n[userId]; return n; });
+    loadUsers();
+  };
+
+  const saveRejection = async (userId: string) => {
+    const v = rejectionEdit[userId];
+    if (v === undefined) return;
+    const { error } = await supabase.from('profiles').update({ rejection_commission: Number(v) || 0 } as any).eq('id', userId);
+    if (error) { toast.error('فشل الحفظ'); return; }
+    toast.success('تم حفظ عمولة الرفض');
+    setRejectionEdit(prev => { const n = { ...prev }; delete n[userId]; return n; });
     loadUsers();
   };
 
@@ -293,6 +304,7 @@ export default function UsersPage() {
                   <TableHead className="text-right">الصلاحية</TableHead>
                   <TableHead className="text-right">المكتب</TableHead>
                   <TableHead className="text-right">عمولة المندوب</TableHead>
+                  <TableHead className="text-right">عمولة الرفض (لم يدفع شحن)</TableHead>
                   <TableHead className="text-right">الحالة</TableHead>
                   <TableHead className="text-right">إجراءات</TableHead>
                 </TableRow>
@@ -323,6 +335,20 @@ export default function UsersPage() {
                             value={commissionEdit[u.id] !== undefined ? commissionEdit[u.id] : (u.commission_amount ?? 0)}
                             onChange={e => setCommissionEdit(prev => ({ ...prev, [u.id]: e.target.value }))}
                             onBlur={() => commissionEdit[u.id] !== undefined && saveCommission(u.id)}
+                            className="h-7 w-20 bg-secondary border-border text-xs"
+                          />
+                          <span className="text-xs text-muted-foreground">ج.م</span>
+                        </div>
+                      ) : <span className="text-xs text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      {u.role === 'courier' ? (
+                        <div className="flex gap-1 items-center">
+                          <Input
+                            type="number"
+                            value={rejectionEdit[u.id] !== undefined ? rejectionEdit[u.id] : (u.rejection_commission ?? 0)}
+                            onChange={e => setRejectionEdit(prev => ({ ...prev, [u.id]: e.target.value }))}
+                            onBlur={() => rejectionEdit[u.id] !== undefined && saveRejection(u.id)}
                             className="h-7 w-20 bg-secondary border-border text-xs"
                           />
                           <span className="text-xs text-muted-foreground">ج.م</span>

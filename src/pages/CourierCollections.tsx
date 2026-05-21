@@ -42,7 +42,7 @@ export default function CourierCollections() {
     const load = async () => {
       const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'courier');
       if (roles && roles.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name, commission_amount').in('id', roles.map(r => r.user_id));
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name, commission_amount, rejection_commission').in('id', roles.map(r => r.user_id));
         setCouriers(profiles || []);
       }
       const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
@@ -148,12 +148,19 @@ export default function CourierCollections() {
   const eligibleOrders = orders.filter(o => commissionStatuses.includes(o.status_id));
   const commissionTotal = eligibleOrders.length * rate;
 
+  // Rejection commission for "رفض ولم يدفع شحن"
+  const rejectionUnpaidStatus = statuses.find(s => s.name === 'رفض ولم يدفع شحن');
+  const courierProfile = couriers.find(c => c.id === selectedCourier);
+  const rejectionRate = Number(courierProfile?.rejection_commission || 0);
+  const rejectionOrders = orders.filter(o => rejectionUnpaidStatus && o.status_id === rejectionUnpaidStatus.id);
+  const rejectionCommissionTotal = rejectionOrders.length * rejectionRate;
+
   const officeCommissionBonuses = bonuses.filter(b => b.reason?.startsWith('__office_commission__'));
   const totalOfficeCommission = officeCommissionBonuses.reduce((sum, b) => sum + Number(b.amount), 0);
   const regularBonuses = bonuses.filter(b => !b.reason?.startsWith('__office_commission__'));
   const totalRegularBonuses = regularBonuses.reduce((sum, b) => sum + Number(b.amount), 0);
 
-  const netDue = totalCollection + totalOfficeCommission - commissionTotal - totalRegularBonuses;
+  const netDue = totalCollection + totalOfficeCommission - commissionTotal - rejectionCommissionTotal - totalRegularBonuses;
 
   const toggleStatus = (statusId: string) => {
     setCommissionStatuses(prev => prev.includes(statusId) ? prev.filter(s => s !== statusId) : [...prev, statusId]);
@@ -294,10 +301,11 @@ export default function CourierCollections() {
 
       {selectedCourier && (
         <>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
             <Card className="bg-card border-border"><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground">إجمالي التحصيل</p><p className="text-lg font-bold text-emerald-500">{totalCollection} ج.م</p></CardContent></Card>
             <Card className="bg-card border-border"><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground">عمولة مكتب</p><p className="text-lg font-bold text-amber-500">{totalOfficeCommission} ج.م</p></CardContent></Card>
             <Card className="bg-card border-border"><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground">العمولة</p><p className="text-lg font-bold text-destructive">{commissionTotal} ج.م</p></CardContent></Card>
+            <Card className="bg-card border-border"><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground">عمولة الرفض ({rejectionOrders.length})</p><p className="text-lg font-bold text-rose-500">{rejectionCommissionTotal} ج.م</p></CardContent></Card>
             <Card className="bg-card border-border"><CardContent className="p-4 text-center"><p className="text-xs text-muted-foreground">صافي المستحق</p><p className="text-lg font-bold text-primary">{netDue} ج.م</p></CardContent></Card>
           </div>
 
@@ -345,6 +353,15 @@ export default function CourierCollections() {
                     onFocus={e => { if (e.target.value === '0') setCommissionPerOrder(''); }} />
                 </div>
                 <p className="text-sm">= <span className="font-bold text-primary">{commissionTotal}</span> ج.م ({eligibleOrders.length} أوردر مؤهل)</p>
+              </div>
+              <div className="border-t border-border pt-3">
+                <p className="text-xs text-muted-foreground mb-2">
+                  ❌ عمولة الأوردرات المرفوضة (لم يدفع شحن) — بمبلغ ثابت من ملف المندوب
+                </p>
+                <p className="text-sm">
+                  {rejectionOrders.length} أوردر × <span className="font-bold">{rejectionRate}</span> ج.م = <span className="font-bold text-rose-600">{rejectionCommissionTotal}</span> ج.م
+                  {rejectionRate === 0 && <span className="text-xs text-amber-600 mr-2">⚠️ حدد المبلغ من قسم المستخدمين</span>}
+                </p>
               </div>
             </CardContent>
           </Card>

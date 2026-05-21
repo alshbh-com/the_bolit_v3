@@ -96,6 +96,7 @@ export default function CourierMonthlyReport() {
 
   const courier = profiles[selectedCourier];
   const courierCommissionRate = Number(courier?.commission_amount || 0);
+  const rejectionCommissionRate = Number(courier?.rejection_commission || 0);
 
   const grouped = useMemo(() => {
     const delivered: any[] = [];
@@ -139,17 +140,21 @@ export default function CourierMonthlyReport() {
       totalShipping += Number(o.shipping_paid || 0);
       courierCommission += courierCommissionRate;
     });
+    let rejectionCommission = 0;
+    grouped.rejUnpaid.forEach(() => {
+      rejectionCommission += rejectionCommissionRate;
+    });
 
     const countableOrders = grouped.delivered.length + grouped.partial.length + grouped.rejPaid.length;
     const collectedByCourier = collections.reduce((s, c) => s + Number(c.amount || 0), 0);
-    const netDueToCompany = totalRevenue - courierCommission - collectedByCourier;
+    const netDueToCompany = totalRevenue - courierCommission - rejectionCommission - collectedByCourier;
     const remainingShipping = totalShipping - collectedByCourier;
 
     return {
-      totalRevenue, totalShipping, courierCommission, officeCommission,
+      totalRevenue, totalShipping, courierCommission, rejectionCommission, officeCommission,
       countableOrders, collectedByCourier, netDueToCompany, remainingShipping,
     };
-  }, [grouped, courierCommissionRate, collections]);
+  }, [grouped, courierCommissionRate, rejectionCommissionRate, collections]);
 
   const reportColumns = [
     { key: 'created_at', label: 'التاريخ', format: (v: any) => v ? new Date(v).toLocaleDateString('ar-EG') : '-' },
@@ -163,6 +168,7 @@ export default function CourierMonthlyReport() {
     { key: 'courier_comm', label: 'عمولة المندوب', format: (_: any, r: any) => {
       const n = r.order_statuses?.name;
       if (DELIVERED_NAMES.includes(n) || PARTIAL_NAMES.includes(n) || REJECTED_PAID_NAMES.includes(n)) return `${courierCommissionRate} ج`;
+      if (REJECTED_UNPAID_NAMES.includes(n)) return `${rejectionCommissionRate} ج`;
       return '-';
     }},
     { key: 'office_comm', label: 'عمولة المكتب', format: (_: any, r: any) => {
@@ -186,6 +192,7 @@ export default function CourierMonthlyReport() {
       { label: 'إجمالي الإيراد', value: `${stats.totalRevenue.toLocaleString()} ج` },
       { label: 'إجمالي الشحن', value: `${stats.totalShipping.toLocaleString()} ج` },
       { label: `عمولة المندوب (${courierCommissionRate}×${stats.countableOrders})`, value: `${stats.courierCommission.toLocaleString()} ج` },
+      { label: `عمولة الرفض (${rejectionCommissionRate}×${grouped.rejUnpaid.length})`, value: `${stats.rejectionCommission.toLocaleString()} ج` },
       { label: 'عمولة المكاتب', value: `${stats.officeCommission.toLocaleString()} ج` },
       { label: 'المحصّل من المندوب', value: `${stats.collectedByCourier.toLocaleString()} ج` },
       { label: 'صافي المستحق للشركة', value: `${stats.netDueToCompany.toLocaleString()} ج` },
@@ -261,6 +268,7 @@ export default function CourierMonthlyReport() {
             <BigCard label="إجمالي الإيراد" value={`${stats.totalRevenue.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-emerald-100/40 border-emerald-300 text-emerald-800" />
             <BigCard label="إجمالي الشحن" value={`${stats.totalShipping.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-amber-100/40 border-amber-300 text-amber-800" />
             <BigCard label={`عمولة المندوب (${courierCommissionRate}×${stats.countableOrders})`} value={`${stats.courierCommission.toLocaleString()} ج`} icon={<TrendingDown className="h-5 w-5" />} cls="bg-sky-100/40 border-sky-300 text-sky-800" />
+            <BigCard label={`عمولة الرفض (${rejectionCommissionRate}×${grouped.rejUnpaid.length})`} value={`${stats.rejectionCommission.toLocaleString()} ج`} icon={<TrendingDown className="h-5 w-5" />} cls="bg-rose-100/40 border-rose-300 text-rose-800" />
             <BigCard label="عمولة المكاتب" value={`${stats.officeCommission.toLocaleString()} ج`} icon={<TrendingDown className="h-5 w-5" />} cls="bg-purple-100/40 border-purple-300 text-purple-800" />
             <BigCard label="المحصّل من المندوب" value={`${stats.collectedByCourier.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-indigo-100/40 border-indigo-300 text-indigo-800" />
             <BigCard label="فاضل من الشحن" value={`${stats.remainingShipping.toLocaleString()} ج`} icon={<Wallet className="h-5 w-5" />} cls="bg-orange-100/40 border-orange-300 text-orange-800" />
