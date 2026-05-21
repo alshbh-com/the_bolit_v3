@@ -42,7 +42,7 @@ export default function CourierCollections() {
     const load = async () => {
       const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'courier');
       if (roles && roles.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name, commission_amount').in('id', roles.map(r => r.user_id));
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name, commission_amount, rejection_commission').in('id', roles.map(r => r.user_id));
         setCouriers(profiles || []);
       }
       const { data: sts } = await supabase.from('order_statuses').select('*').order('sort_order');
