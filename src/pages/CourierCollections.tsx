@@ -354,6 +354,15 @@ export default function CourierCollections() {
                 </div>
                 <p className="text-sm">= <span className="font-bold text-primary">{commissionTotal}</span> ج.م ({eligibleOrders.length} أوردر مؤهل)</p>
               </div>
+              <div className="border-t border-border pt-3">
+                <p className="text-xs text-muted-foreground mb-2">
+                  ❌ عمولة الأوردرات المرفوضة (لم يدفع شحن) — بمبلغ ثابت من ملف المندوب
+                </p>
+                <p className="text-sm">
+                  {rejectionOrders.length} أوردر × <span className="font-bold">{rejectionRate}</span> ج.م = <span className="font-bold text-rose-600">{rejectionCommissionTotal}</span> ج.م
+                  {rejectionRate === 0 && <span className="text-xs text-amber-600 mr-2">⚠️ حدد المبلغ من قسم المستخدمين</span>}
+                </p>
+              </div>
             </CardContent>
           </Card>
 
