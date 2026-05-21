@@ -192,6 +192,7 @@ export default function CourierMonthlyReport() {
       { label: 'إجمالي الإيراد', value: `${stats.totalRevenue.toLocaleString()} ج` },
       { label: 'إجمالي الشحن', value: `${stats.totalShipping.toLocaleString()} ج` },
       { label: `عمولة المندوب (${courierCommissionRate}×${stats.countableOrders})`, value: `${stats.courierCommission.toLocaleString()} ج` },
+      { label: `عمولة الرفض (${rejectionCommissionRate}×${grouped.rejUnpaid.length})`, value: `${stats.rejectionCommission.toLocaleString()} ج` },
       { label: 'عمولة المكاتب', value: `${stats.officeCommission.toLocaleString()} ج` },
       { label: 'المحصّل من المندوب', value: `${stats.collectedByCourier.toLocaleString()} ج` },
       { label: 'صافي المستحق للشركة', value: `${stats.netDueToCompany.toLocaleString()} ج` },
