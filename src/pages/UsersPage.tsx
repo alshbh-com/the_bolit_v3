@@ -130,6 +130,16 @@ export default function UsersPage() {
     loadUsers();
   };
 
+  const saveRejection = async (userId: string) => {
+    const v = rejectionEdit[userId];
+    if (v === undefined) return;
+    const { error } = await supabase.from('profiles').update({ rejection_commission: Number(v) || 0 } as any).eq('id', userId);
+    if (error) { toast.error('فشل الحفظ'); return; }
+    toast.success('تم حفظ عمولة الرفض');
+    setRejectionEdit(prev => { const n = { ...prev }; delete n[userId]; return n; });
+    loadUsers();
+  };
+
   const updatePassword = async () => {
     if (!pwDialog || !newPw.trim()) return;
     setUpdatingPw(true);
