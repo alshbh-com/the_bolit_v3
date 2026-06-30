@@ -138,22 +138,30 @@ export default function DataExport() {
           break;
         }
         case 'office-settlement': {
-          let query = supabase.from('orders').select('barcode, customer_code, customer_name, price, delivery_price, is_closed, is_settled, offices(name), order_statuses(name)');
+          let query = supabase.from('orders').select('barcode, customer_code, customer_name, price, delivery_price, is_closed, is_settled, returned_to_sender, courier_id, offices(name), order_statuses(name)');
           if (filterOffice !== 'all') query = query.eq('office_id', filterOffice);
           if (dateFrom) query = query.gte('created_at', `${dateFrom}T00:00:00`);
           if (dateTo) query = query.lte('created_at', `${dateTo}T23:59:59`);
           const { data } = await query.order('created_at', { ascending: false });
+          const courierIds = [...new Set((data || []).map((o: any) => o.courier_id).filter(Boolean))];
+          const { data: profiles } = courierIds.length > 0
+            ? await supabase.from('profiles').select('id, full_name, commission_amount').in('id', courierIds)
+            : { data: [] };
+          const courierMap: Record<string, any> = {};
+          (profiles || []).forEach((p: any) => { courierMap[p.id] = p; });
           downloadCSV((data || []).map((o: any) => ({
             'الباركود': o.barcode || '-',
             'الكود': o.customer_code || '-',
             'العميل': o.customer_name,
             'المكتب': o.offices?.name || '-',
-            'السعر': o.price,
-            'الشحن': o.delivery_price,
-            'الإجمالي': Number(o.price) + Number(o.delivery_price),
+            'سعر الأوردر': o.price,
+            'سعر الشحن': o.delivery_price,
+            'المندوب': courierMap[o.courier_id]?.full_name || '-',
+            'عمولة المندوب': Number(courierMap[o.courier_id]?.commission_amount || 0),
+            'الصافي للمكتب من الشحن': Number(o.delivery_price || 0) - Number(courierMap[o.courier_id]?.commission_amount || 0),
             'الحالة': o.order_statuses?.name || '-',
             'مغلق': o.is_closed ? 'نعم' : 'لا',
-            'خالص': o.is_settled ? 'نعم' : 'لا',
+            'حالة الحساب': o.returned_to_sender ? 'تم ارتجاع للراسل' : o.is_settled ? 'تم التحصيل' : 'لم يتم التحديد',
           })), 'office_settlement');
           break;
         }
