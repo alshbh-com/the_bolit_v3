@@ -377,7 +377,7 @@ export default function OfficeSettlement() {
 
   const exportToExcel = () => {
     const statusName = (sid: string) => statuses.find(s => s.id === sid)?.name || '-';
-    const data = displayRows.map((r, i) => ({
+    const data: any[] = displayRows.map((r, i) => ({
       '#': i + 1, 'الكود': r.code, 'الاسم': r.name, 'الحالة': statusName(r.status_id),
       'القطع': r.pieces, 'سعر الأوردر': r.amount, 'سعر الشحن': r.shipping,
       'عمولة المندوب': getCourierCommissionForRow(r), 'الصافي للمكتب من الشحن': getOfficeShippingNet(r),
