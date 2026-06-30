@@ -24,6 +24,22 @@ export default function OfficePortal() {
     loadData();
   }, [user]);
 
+  useEffect(() => {
+    if (!officeId) return;
+    const channel = supabase
+      .channel(`office-portal-orders-${officeId}`)
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'orders', filter: `office_id=eq.${officeId}` },
+        () => loadData()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [officeId]);
+
   const loadData = async () => {
     if (!user) return;
     setLoading(true);
@@ -64,6 +80,12 @@ export default function OfficePortal() {
 
   const getStatusName = (statusId: string) => statuses.find(s => s.id === statusId)?.name || '-';
   const getStatusColor = (statusId: string) => statuses.find(s => s.id === statusId)?.color || '#6b7280';
+  const deliveredStatusIds = statuses.filter(s => ['تم التسليم', 'تسليم جزئي'].includes(s.name)).map(s => s.id);
+  const deliveredOrders = orders.filter(o => deliveredStatusIds.includes(o.status_id));
+  const deliveredProductsTotal = deliveredOrders.reduce((sum, o) => {
+    const statusName = getStatusName(o.status_id);
+    return sum + Number(statusName === 'تسليم جزئي' ? (o.partial_amount || 0) : (o.price || 0));
+  }, 0);
 
   return (
     <div className="min-h-screen bg-background p-4" dir="rtl">
@@ -80,6 +102,21 @@ export default function OfficePortal() {
               خروج
             </Button>
           </div>
+        </div>
+
+        <div className="grid gap-3 sm:grid-cols-2">
+          <Card className="bg-card border-border">
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground">تسليمات عندك</p>
+              <p className="text-2xl font-bold text-primary">{deliveredOrders.length} أوردر</p>
+            </CardContent>
+          </Card>
+          <Card className="bg-card border-border">
+            <CardContent className="p-4">
+              <p className="text-sm text-muted-foreground">قيمة التسليمات بدون الشحن</p>
+              <p className="text-2xl font-bold text-primary">{deliveredProductsTotal.toLocaleString()} ج.م</p>
+            </CardContent>
+          </Card>
         </div>
 
         <Card className="bg-card border-border">

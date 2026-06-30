@@ -53,7 +53,7 @@ export default function OfficeAccounts() {
     const loadCouriers = async () => {
       const { data: roles } = await supabase.from('user_roles').select('user_id').eq('role', 'courier');
       if (roles && roles.length > 0) {
-        const { data: profiles } = await supabase.from('profiles').select('id, full_name').in('id', roles.map(r => r.user_id));
+        const { data: profiles } = await supabase.from('profiles').select('id, full_name, commission_amount').in('id', roles.map(r => r.user_id));
         setCouriers(profiles || []);
       }
       const { data: all } = await supabase.from('profiles').select('id, full_name');
@@ -64,7 +64,7 @@ export default function OfficeAccounts() {
     loadCouriers();
   }, []);
 
-  useEffect(() => { loadAccounts(); }, [selectedOffice, period, offices, statuses]);
+  useEffect(() => { loadAccounts(); }, [selectedOffice, period, offices, statuses, couriers, courierCommissionRate]);
 
   useEffect(() => {
     if (selectedOffice !== 'all') loadOfficeOrders();
@@ -74,25 +74,36 @@ export default function OfficeAccounts() {
   const loadOfficeOrders = async () => {
     const { data } = await supabase
       .from('orders')
-      .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name, customer_phone, courier_id, office_id, created_at, returned_to_sender, returned_to_sender_at, returned_to_sender_by, last_modified_by, closed_by, closed_at')
+        .select('id, barcode, status_id, partial_amount, price, delivery_price, is_settled, customer_code, customer_name, customer_phone, courier_id, office_id, created_at, returned_to_sender, returned_to_sender_at, returned_to_sender_by, last_modified_by, closed_by, closed_at')
       .eq('office_id', selectedOffice)
       .eq('is_closed', false)
       .order('created_at', { ascending: false });
     setOfficeOrders(data || []);
   };
 
-  const toggleSettled = async (orderId: string, settled: boolean) => {
-    await supabase.from('orders').update({ is_settled: settled } as any).eq('id', orderId);
-    setOfficeOrders(prev => prev.map(o => o.id === orderId ? { ...o, is_settled: settled } : o));
-    toast.success(settled ? 'تم تحديد كخالص' : 'تم إلغاء التحديد');
-  };
+  const updateOfficeOutcome = async (orderId: string, outcome: 'pending' | 'collected' | 'returned') => {
+    const payload = outcome === 'returned'
+      ? { returned_to_sender: true, is_settled: false }
+      : outcome === 'collected'
+        ? { returned_to_sender: false, is_settled: true }
+        : { returned_to_sender: false, is_settled: false };
 
-  const toggleReturnedToSender = async (orderId: string, returned: boolean) => {
-    const { error } = await supabase.from('orders').update({ returned_to_sender: returned } as any).eq('id', orderId);
-    if (error) { toast.error('فشل التحديث'); return; }
-    setOfficeOrders(prev => prev.map(o => o.id === orderId ? { ...o, returned_to_sender: returned, returned_to_sender_at: returned ? new Date().toISOString() : null } : o));
-    logActivity(returned ? 'order_returned_to_sender' : 'order_unreturned_to_sender', { order_id: orderId });
-    toast.success(returned ? 'تم تحديد ارتجاع للراسل' : 'تم إلغاء ارتجاع للراسل');
+    const previous = officeOrders.find(o => o.id === orderId);
+    setOfficeOrders(prev => prev.map(o => o.id === orderId ? {
+      ...o,
+      ...payload,
+      returned_to_sender_at: outcome === 'returned' ? (o.returned_to_sender_at || new Date().toISOString()) : null,
+    } : o));
+
+    const { error } = await supabase.from('orders').update(payload as any).eq('id', orderId);
+    if (error) {
+      toast.error('فشل تحديث حالة الحساب');
+      if (previous) setOfficeOrders(prev => prev.map(o => o.id === orderId ? previous : o));
+      return;
+    }
+
+    logActivity('تغيير حالة حساب أوردر مكتب', { order_id: orderId, outcome });
+    toast.success(outcome === 'returned' ? 'تم تحديد ارتجاع للراسل' : outcome === 'collected' ? 'تم تحديد تم التحصيل' : 'تم إلغاء حالة الحساب');
   };
 
   const getDateFilter = () => {
@@ -127,7 +138,7 @@ export default function OfficeAccounts() {
     const result = await Promise.all(officeList.map(async (office) => {
       let query = supabase
         .from('orders')
-        .select('price, delivery_price, status_id, partial_amount')
+        .select('price, delivery_price, status_id, partial_amount, courier_id')
         .eq('office_id', office.id)
         .eq('is_closed', false);
 
@@ -141,6 +152,9 @@ export default function OfficeAccounts() {
       const shippingDiscount = officePayments.filter(p => p.type === 'shipping_discount').reduce((sum, p) => sum + Number(p.amount), 0);
       const partialManual = officePayments.filter(p => p.type === 'partial_delivery').reduce((sum, p) => sum + Number(p.amount), 0);
 
+      const totalShipping = orders.reduce((sum, o) => sum + Number(o.delivery_price || 0), 0);
+      const courierCommissionTotal = orders.reduce((sum, o) => sum + getCourierCommissionForOrder(o), 0);
+      const officeShippingNet = totalShipping - courierCommissionTotal;
       const deliveredTotal = orders.filter(o => o.status_id === deliveredStatus?.id).reduce((sum, o) => sum + Number(o.price), 0);
       const returnedTotal = orders.filter(o => returnStatusIds.includes(o.status_id)).reduce((sum, o) => sum + Number(o.price), 0);
       const postponedTotal = orders.filter(o => o.status_id === postponedStatus?.id).reduce((sum, o) => sum + Number(o.price), 0);
@@ -159,6 +173,9 @@ export default function OfficeAccounts() {
         partialManual,
         partialCourierCollected,
         shippingDiscount,
+        totalShipping,
+        courierCommissionTotal,
+        officeShippingNet,
         settlement,
         settlementWithPostponed,
         advancePaid,
@@ -251,7 +268,6 @@ export default function OfficeAccounts() {
     );
   });
 
-  const courierRate = parseFloat(courierCommissionRate) || 0;
   const officeRate = parseFloat(officeCommissionRate) || 0;
 
   const getCourierName = (courierId: string | null) => {
@@ -264,6 +280,27 @@ export default function OfficeAccounts() {
     return offices.find(o => o.id === officeId)?.name || '-';
   };
 
+  const getCourierCommissionForOrder = (order: any) => {
+    const manualRate = parseFloat(courierCommissionRate);
+    if (courierCommissionRate.trim() !== '' && !Number.isNaN(manualRate)) return manualRate;
+    const courier = couriers.find(c => c.id === order.courier_id);
+    return Number(courier?.commission_amount || 0);
+  };
+
+  const getOfficeShippingNet = (order: any) => Number(order.delivery_price || 0) - getCourierCommissionForOrder(order);
+
+  const getOfficeOutcome = (order: any) => {
+    if (order.returned_to_sender) return 'returned';
+    if (order.is_settled) return 'collected';
+    return 'pending';
+  };
+
+  const getOfficeOutcomeLabel = (order: any) => {
+    if (order.returned_to_sender) return 'تم ارتجاع للراسل';
+    if (order.is_settled) return 'تم التحصيل';
+    return 'لم يتم التحديد';
+  };
+
   const getStatusSummary = () => {
     const statusesToShow = selectedStatuses.length > 0
       ? filterableStatuses.filter(s => selectedStatuses.includes(s.id))
@@ -273,13 +310,15 @@ export default function OfficeAccounts() {
       const ords = officeOrders.filter(o => o.status_id === status.id);
       const total = ords.reduce((sum, o) => sum + Number(o.price || 0), 0);
       const shipping = ords.reduce((sum, o) => sum + Number(o.delivery_price || 0), 0);
-      const net = total - shipping;
+      const courierCommission = ords.reduce((sum, o) => sum + getCourierCommissionForOrder(o), 0);
+      const net = shipping - courierCommission;
       return {
         statusName: status.name,
         statusColor: status.color,
         count: ords.length,
         total,
         shipping,
+        courierCommission,
         net,
       };
     }).filter(s => s.count > 0);
@@ -288,6 +327,7 @@ export default function OfficeAccounts() {
   const statusSummary = selectedOffice !== 'all' ? getStatusSummary() : [];
   const summaryTotalAll = statusSummary.reduce((sum, s) => sum + s.total, 0);
   const summaryShippingAll = statusSummary.reduce((sum, s) => sum + s.shipping, 0);
+  const summaryCourierCommissionAll = statusSummary.reduce((sum, s) => sum + s.courierCommission, 0);
   const summaryNetAll = statusSummary.reduce((sum, s) => sum + s.net, 0);
 
   const officeName = offices.find(o => o.id === selectedOffice)?.name || '';
@@ -308,13 +348,14 @@ export default function OfficeAccounts() {
       'العميل': o.customer_name || '-',
       'الهاتف': o.customer_phone || '-',
       'المكتب': getOfficeName(o.office_id),
-      'السعر': Number(o.price || 0),
-      'الشحن': Number(o.delivery_price || 0),
-      'عمولة المندوب': courierRate,
+      'سعر الأوردر': Number(o.price || 0),
+      'سعر الشحن': Number(o.delivery_price || 0),
+      'عمولة المندوب': getCourierCommissionForOrder(o),
       'عمولة المكتب': officeRate,
-      'الصافي': Number(o.price || 0) - Number(o.delivery_price || 0),
+      'الصافي للمكتب من الشحن': getOfficeShippingNet(o),
       'الحالة': statusName(o.status_id),
       'المندوب': getCourierName(o.courier_id),
+      'حالة الحساب': getOfficeOutcomeLabel(o),
     }));
 
     data.push({
@@ -324,13 +365,14 @@ export default function OfficeAccounts() {
       'العميل': 'الإجمالي',
       'الهاتف': '',
       'المكتب': '',
-      'السعر': rows.reduce((s, o) => s + Number(o.price || 0), 0),
-      'الشحن': rows.reduce((s, o) => s + Number(o.delivery_price || 0), 0),
-      'عمولة المندوب': courierRate * rows.length,
+      'سعر الأوردر': rows.reduce((s, o) => s + Number(o.price || 0), 0),
+      'سعر الشحن': rows.reduce((s, o) => s + Number(o.delivery_price || 0), 0),
+      'عمولة المندوب': rows.reduce((s, o) => s + getCourierCommissionForOrder(o), 0),
       'عمولة المكتب': officeRate * rows.length,
-      'الصافي': rows.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0),
+      'الصافي للمكتب من الشحن': rows.reduce((s, o) => s + getOfficeShippingNet(o), 0),
       'الحالة': '',
       'المندوب': '',
+      'حالة الحساب': '',
     });
 
     const ws = XLSX.utils.json_to_sheet(data);
@@ -354,18 +396,20 @@ export default function OfficeAccounts() {
       <td>${o.customer_phone || '-'}</td>
       <td>${Number(o.price || 0)}</td>
       <td>${Number(o.delivery_price || 0)}</td>
-      <td>${courierRate}</td>
+      <td>${getCourierCommissionForOrder(o)}</td>
       <td>${officeRate}</td>
-      <td>${Number(o.price || 0) - Number(o.delivery_price || 0)}</td>
+      <td>${getOfficeShippingNet(o)}</td>
       <td>${statusName(o.status_id)}</td>
       <td>${getCourierName(o.courier_id)}</td>
-      <td style="text-align:center;font-weight:bold;color:#16a34a">✅ خالص</td>
+      <td style="text-align:center;font-weight:bold">${getOfficeOutcomeLabel(o)}</td>
     </tr>`).join('');
 
     const totalPrice = rows.reduce((s, o) => s + Number(o.price || 0), 0);
     const totalShipping = rows.reduce((s, o) => s + Number(o.delivery_price || 0), 0);
-    const totalNet = totalPrice - totalShipping;
-    const settledCount = rows.length;
+    const totalCourierCommission = rows.reduce((s, o) => s + getCourierCommissionForOrder(o), 0);
+    const totalNet = totalShipping - totalCourierCommission;
+    const collectedCount = rows.filter(o => o.is_settled).length;
+    const returnedCount = rows.filter(o => o.returned_to_sender).length;
     const scopeLabel = selectedOrderIds.length > 0 ? `محدد: ${rows.length} من ${filteredOrders.length}` : `الكل: ${rows.length}`;
 
     w.document.write(`<!DOCTYPE html><html dir="rtl"><head><meta charset="UTF-8">
@@ -378,23 +422,31 @@ export default function OfficeAccounts() {
       table { width: 100%; border-collapse: collapse; margin-bottom: 15px; }
       th, td { border: 1px solid #333; padding: 4px 6px; text-align: right; font-size: 10px; }
       th { background: #f0f0f0; font-weight: bold; }
+      .totals { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-bottom: 12px; }
+      .total-card { border: 1px solid #333; padding: 8px; background: #f8fafc; font-weight: bold; }
       .total-row { background: #e8f4e8; font-weight: bold; }
     </style></head><body>
     <div class="header">The Pilito - حسابات ${officeName}</div>
     <div class="sub-header">${format(new Date(), 'dd/MM/yyyy')} | ${scopeLabel}</div>
+    <div class="totals">
+      <div class="total-card">إجمالي سعر الأوردر: ${totalPrice} ج.م</div>
+      <div class="total-card">إجمالي الشحن: ${totalShipping} ج.م</div>
+      <div class="total-card">إجمالي عمولة المناديب: ${totalCourierCommission} ج.م</div>
+      <div class="total-card">إجمالي الصافي للمكتب: ${totalNet} ج.م</div>
+    </div>
     
     <table>
-      <thead><tr><th>#</th><th>الباركود</th><th>العميل</th><th>الهاتف</th><th>الإجمالي</th><th>الشحن</th><th>عمولة المندوب</th><th>عمولة المكتب</th><th>الصافي</th><th>الحالة</th><th>المندوب</th><th>خالص</th></tr></thead>
+      <thead><tr><th>#</th><th>الباركود</th><th>العميل</th><th>الهاتف</th><th>سعر الأوردر</th><th>سعر الشحن</th><th>عمولة المندوب</th><th>عمولة المكتب</th><th>الصافي للمكتب</th><th>الحالة</th><th>المندوب</th><th>حالة الحساب</th></tr></thead>
       <tbody>
         ${orderRows}
         <tr class="total-row">
           <td colspan="4">الإجمالي (${rows.length} أوردر)</td>
           <td>${totalPrice}</td>
           <td>${totalShipping}</td>
-          <td>${courierRate * rows.length}</td>
+          <td>${totalCourierCommission}</td>
           <td>${officeRate * rows.length}</td>
           <td>${totalNet}</td>
-          <td colspan="3">خالص: ${settledCount}</td>
+          <td colspan="3">تم التحصيل: ${collectedCount} | تم ارتجاع للراسل: ${returnedCount}</td>
         </tr>
       </tbody>
     </table>
@@ -578,9 +630,10 @@ export default function OfficeAccounts() {
                   <TableRow className="border-border">
                     <TableHead className="text-right">الحالة</TableHead>
                     <TableHead className="text-right">العدد</TableHead>
-                    <TableHead className="text-right">الإجمالي</TableHead>
-                    <TableHead className="text-right">العمولة (شحن)</TableHead>
-                    <TableHead className="text-right">الصافي</TableHead>
+                    <TableHead className="text-right">سعر الأوردر</TableHead>
+                    <TableHead className="text-right">سعر الشحن</TableHead>
+                    <TableHead className="text-right">عمولة المندوب</TableHead>
+                    <TableHead className="text-right">الصافي للمكتب</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -592,6 +645,7 @@ export default function OfficeAccounts() {
                       <TableCell className="text-sm font-bold">{s.count}</TableCell>
                       <TableCell className="text-sm font-bold">{s.total} ج.م</TableCell>
                       <TableCell className="text-sm font-bold">{s.shipping} ج.م</TableCell>
+                      <TableCell className="text-sm font-bold text-amber-500">{s.courierCommission} ج.م</TableCell>
                       <TableCell className="text-sm font-bold text-primary">{s.net} ج.م</TableCell>
                     </TableRow>
                   ))}
@@ -602,6 +656,7 @@ export default function OfficeAccounts() {
                     <TableCell className="font-bold">{statusSummary.reduce((s, x) => s + x.count, 0)}</TableCell>
                     <TableCell className="font-bold">{summaryTotalAll} ج.م</TableCell>
                     <TableCell className="font-bold">{summaryShippingAll} ج.م</TableCell>
+                    <TableCell className="font-bold text-amber-500">{summaryCourierCommissionAll} ج.م</TableCell>
                     <TableCell className="font-bold text-primary">{summaryNetAll} ج.م</TableCell>
                   </TableRow>
                 </TableFooter>
@@ -624,6 +679,9 @@ export default function OfficeAccounts() {
                   <TableHead className="text-right">مؤجل</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">تسليم جزئي (يدوي)</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">تحصيل جزئي مندوب</TableHead>
+                  <TableHead className="text-right hidden lg:table-cell">إجمالي الشحن</TableHead>
+                  <TableHead className="text-right hidden lg:table-cell">عمولة المناديب</TableHead>
+                  <TableHead className="text-right hidden lg:table-cell">صافي المكتب من الشحن</TableHead>
                   <TableHead className="text-right hidden sm:table-cell">خصم شحن</TableHead>
                   <TableHead className="text-right">المدفوع</TableHead>
                   <TableHead className="text-right">العمولة</TableHead>
@@ -633,7 +691,7 @@ export default function OfficeAccounts() {
               </TableHeader>
               <TableBody>
                 {accounts.length === 0 ? (
-                  <TableRow><TableCell colSpan={12} className="text-center text-muted-foreground py-8">لا توجد بيانات</TableCell></TableRow>
+                  <TableRow><TableCell colSpan={15} className="text-center text-muted-foreground py-8">لا توجد بيانات</TableCell></TableRow>
                 ) : accounts.map(a => (
                   <TableRow key={a.id} className="border-border">
                     <TableCell className="font-medium text-sm">{a.name}</TableCell>
@@ -643,6 +701,9 @@ export default function OfficeAccounts() {
                     <TableCell className="font-bold text-sm">{a.postponedTotal} ج.م</TableCell>
                     <TableCell className="font-bold text-sm hidden sm:table-cell">{a.partialManual} ج.م</TableCell>
                     <TableCell className="font-bold text-sm hidden sm:table-cell">{a.partialCourierCollected} ج.م</TableCell>
+                    <TableCell className="font-bold text-sm hidden lg:table-cell">{a.totalShipping} ج.م</TableCell>
+                    <TableCell className="font-bold text-sm hidden lg:table-cell text-amber-500">{a.courierCommissionTotal} ج.م</TableCell>
+                    <TableCell className="font-bold text-sm hidden lg:table-cell text-primary">{a.officeShippingNet} ج.م</TableCell>
                     <TableCell className="text-sm hidden sm:table-cell">{a.shippingDiscount} ج.م</TableCell>
                     <TableCell className="font-bold text-sm">{a.advancePaid} ج.م</TableCell>
                     <TableCell className="text-sm font-bold">{a.commission} ج.م</TableCell>
@@ -681,17 +742,16 @@ export default function OfficeAccounts() {
                      <TableHead className="text-right">العميل</TableHead>
                      <TableHead className="text-right">الهاتف</TableHead>
                      <TableHead className="text-right">المكتب</TableHead>
-                     <TableHead className="text-right">الإجمالي</TableHead>
-                     <TableHead className="text-right">الشحن</TableHead>
+                      <TableHead className="text-right">سعر الأوردر</TableHead>
+                      <TableHead className="text-right">سعر الشحن</TableHead>
                      <TableHead className="text-right">عمولة المندوب</TableHead>
                      <TableHead className="text-right">عمولة المكتب</TableHead>
-                     <TableHead className="text-right">الصافي</TableHead>
+                      <TableHead className="text-right">الصافي للمكتب</TableHead>
                      <TableHead className="text-right">الحالة</TableHead>
-                     <TableHead className="text-right">ارتجاع للراسل</TableHead>
+                      <TableHead className="text-right">حالة الحساب</TableHead>
                      <TableHead className="text-right">المندوب</TableHead>
                      <TableHead className="text-right hidden sm:table-cell">التاريخ</TableHead>
                      <TableHead className="text-right hidden md:table-cell">آخر تعديل / قفل</TableHead>
-                     <TableHead className="text-right">خالص</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -699,7 +759,8 @@ export default function OfficeAccounts() {
                     const status = statuses.find(s => s.id === o.status_id);
                     const price = Number(o.price || 0);
                     const shipping = Number(o.delivery_price || 0);
-                    const net = price - shipping;
+                    const courierCommission = getCourierCommissionForOrder(o);
+                    const net = getOfficeShippingNet(o);
                     const createdDate = o.created_at ? new Date(o.created_at).toLocaleDateString('ar-EG') : '-';
                     const isSelected = selectedOrderIds.includes(o.id);
                     return (
@@ -721,7 +782,7 @@ export default function OfficeAccounts() {
                         <TableCell className="text-sm">{getOfficeName(o.office_id)}</TableCell>
                         <TableCell className="text-sm font-bold">{price} ج.م</TableCell>
                         <TableCell className="text-sm">{shipping} ج.م</TableCell>
-                        <TableCell className="text-sm text-amber-500 font-bold">{courierRate} ج.م</TableCell>
+                        <TableCell className="text-sm text-amber-500 font-bold">{courierCommission} ج.م</TableCell>
                         <TableCell className="text-sm text-blue-500 font-bold">{officeRate} ج.م</TableCell>
                         <TableCell className="text-sm font-bold text-primary">{net} ج.م</TableCell>
                         <TableCell>
@@ -760,14 +821,16 @@ export default function OfficeAccounts() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          <Button
-                            size="sm"
-                            variant={o.returned_to_sender ? 'default' : 'outline'}
-                            className={`text-xs h-7 px-2 ${o.returned_to_sender ? 'bg-rose-600 hover:bg-rose-700 text-white' : ''}`}
-                            onClick={() => toggleReturnedToSender(o.id, !o.returned_to_sender)}
-                          >
-                            {o.returned_to_sender ? '↩ تم الارتجاع' : 'ارتجاع للراسل'}
-                          </Button>
+                          <Select value={getOfficeOutcome(o)} onValueChange={(v) => updateOfficeOutcome(o.id, v as 'pending' | 'collected' | 'returned')}>
+                            <SelectTrigger className="h-8 w-36 bg-secondary border-border text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="pending">لم يتم التحديد</SelectItem>
+                              <SelectItem value="collected">تم التحصيل</SelectItem>
+                              <SelectItem value="returned">تم ارتجاع للراسل</SelectItem>
+                            </SelectContent>
+                          </Select>
                           {o.returned_to_sender && o.returned_to_sender_at && (
                             <div className="text-[10px] text-muted-foreground mt-1">
                               {new Date(o.returned_to_sender_at).toLocaleDateString('ar-EG')}
@@ -785,11 +848,6 @@ export default function OfficeAccounts() {
                             <div className="text-rose-600">قفل بواسطة: <span className="font-medium">{allUsers[o.closed_by] || '—'}</span></div>
                           )}
                         </TableCell>
-                        <TableCell>
-                          <Button size="sm" variant={o.is_settled ? 'default' : 'outline'} className={`text-xs h-6 px-2 ${o.is_settled ? 'bg-emerald-600 hover:bg-emerald-700 text-white' : ''}`} onClick={() => toggleSettled(o.id, !o.is_settled)}>
-                            {o.is_settled ? '✓ خالص' : 'خالص'}
-                          </Button>
-                        </TableCell>
                       </TableRow>
                     );
                   })}
@@ -799,10 +857,10 @@ export default function OfficeAccounts() {
                     <TableCell colSpan={5} className="font-bold">الإجمالي ({filteredOrders.length})</TableCell>
                     <TableCell className="font-bold">{filteredOrders.reduce((s, o) => s + Number(o.price || 0), 0)} ج.م</TableCell>
                     <TableCell className="font-bold">{filteredOrders.reduce((s, o) => s + Number(o.delivery_price || 0), 0)} ج.م</TableCell>
-                    <TableCell className="font-bold text-amber-500">{courierRate * filteredOrders.length} ج.م</TableCell>
+                    <TableCell className="font-bold text-amber-500">{filteredOrders.reduce((s, o) => s + getCourierCommissionForOrder(o), 0)} ج.م</TableCell>
                     <TableCell className="font-bold text-blue-500">{officeRate * filteredOrders.length} ج.م</TableCell>
-                    <TableCell className="font-bold text-primary">{filteredOrders.reduce((s, o) => s + Number(o.price || 0) - Number(o.delivery_price || 0), 0)} ج.م</TableCell>
-                    <TableCell colSpan={6} />
+                    <TableCell className="font-bold text-primary">{filteredOrders.reduce((s, o) => s + getOfficeShippingNet(o), 0)} ج.م</TableCell>
+                    <TableCell colSpan={5} />
                   </TableRow>
                 </TableFooter>
               </Table>
@@ -871,7 +929,7 @@ export default function OfficeAccounts() {
         <h3 className="font-semibold mb-2">معادلة صافي الحساب:</h3>
         <p className="text-sm text-muted-foreground">المستحق = (التسليمات + تسليم جزئي يدوي) - (المدفوع + المرتجع + خصم الشحن + العمولة)</p>
         <p className="text-sm text-muted-foreground">المستحق بالمؤجل = المستحق + المؤجل</p>
-        <p className="text-sm text-muted-foreground mt-1">الصافي = الإجمالي - العمولة (الشحن)</p>
+        <p className="text-sm text-muted-foreground mt-1">الصافي للمكتب من الشحن = سعر الشحن - عمولة المندوب</p>
       </Card>
     </div>
   );
